@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GoRide – Đặt xe nhanh</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=Roboto+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+    :root{
+      --bg-from:#eef2ff;
+      --bg-to:#f0fdf4;
+      --white:#ffffff;
+      --card-bg:#ffffff;
+      --border:#e2e8f0;
+      --border-focus:#93c5fd;
+      --accent:#2563eb;
+      --accent-dk:#1d4ed8;
+      --accent-light:#eff6ff;
+      --accent-mid:#bfdbfe;
+      --text:#0f172a;
+      --sub:#475569;
+      --muted:#94a3b8;
+      --green:#059669;
+      --green-bg:#ecfdf5;
+      --amber:#b45309;
+      --amber-bg:#fffbeb;
+      --red:#dc2626;
+      --sh1:0 1px 4px rgba(15,23,42,.06);
+      --sh2:0 4px 20px rgba(15,23,42,.09);
+      --sh3:0 8px 40px rgba(15,23,42,.13);
+    }
+
+    html,body{
+      height:100%;
+      font-family:'Inter',sans-serif;
+      background:linear-gradient(160deg,var(--bg-from) 0%,var(--bg-to) 100%);
+      color:var(--text);
+      overflow:hidden;
+    }
+
+    /* ─── PHONE SHELL ─── */
+    .shell{
+      position:fixed;inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+
+    /* The phone "screen" — 9:19 ratio */
+    .phone{
+      position:relative;
+      width:min(390px, calc(100vh * 9/19));
+      height:min(calc(390px * 19/9), calc(100vh - 40px));
+      background:var(--card-bg);
+      border-radius:44px;
+      box-shadow:
+        0 0 0 10px #1e293b,
+        0 0 0 12px #334155,
+        0 30px 80px rgba(15,23,42,.35);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+
+    /* Notch */
+    .notch{
+      position:absolute;top:0;left:50%;transform:translateX(-50%);
+      width:120px;height:34px;
+      background:#1e293b;
+      border-radius:0 0 22px 22px;
+      z-index:100;
+      display:flex;align-items:center;justify-content:center;gap:8px;
+    }
+    .notch-cam{width:12px;height:12px;border-radius:50%;background:#0f172a;border:2px solid #334155}
+    .notch-speaker{width:44px;height:5px;border-radius:10px;background:#0f172a}
+
+    /* Status bar */
+    .status-bar{
+      height:44px;
+      padding:0 24px;
+      display:flex;align-items:flex-end;justify-content:space-between;
+      padding-bottom:6px;
+      flex-shrink:0;
+    }
+    .status-time{
+      font-family:'Inter',sans-serif;
+      font-weight:600;font-size:15px;color:var(--text);
+      letter-spacing:-.2px;
+    }
+    .status-icons{display:flex;align-items:center;gap:5px;color:var(--text);font-size:12px}
+
+    /* Scrollable content */
+    .screen{
+      flex:1;
+      overflow-y:auto;
+      overflow-x:hidden;
+      scrollbar-width:none;
+      padding:0 18px 24px;
+    }
+    .screen::-webkit-scrollbar{display:none}
+
+    /* ─── LOGO ROW ─── */
+    .logo-row{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:10px 0 16px;
+    }
+    .logo-left{display:flex;align-items:center;gap:10px}
+    .logo-icon{
+      width:38px;height:38px;
+      background:linear-gradient(135deg,#2563eb,#06b6d4);
+      border-radius:12px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:19px;
+      box-shadow:0 3px 12px rgba(37,99,235,.3);
+    }
+    .logo-text{
+      font-family:'Plus Jakarta Sans',sans-serif;
+      font-weight:800;font-size:21px;letter-spacing:-.5px;
+      color:var(--text);
+    }
+    .live-pill{
+      display:flex;align-items:center;gap:5px;
+      padding:5px 11px;
+      background:var(--green-bg);
+      border:1px solid #a7f3d0;
+      border-radius:20px;
+      font-size:12px;font-weight:600;color:var(--green);
+    }
+    .live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.8s ease-in-out infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+    /* ─── GREETING ─── */
+    .greeting{margin-bottom:18px}
+    .greeting-sub{font-size:13px;color:var(--muted);font-weight:400;margin-bottom:2px}
+    .greeting-main{
+      font-family:'Plus Jakarta Sans',sans-serif;
+      font-weight:700;font-size:20px;color:var(--text);letter-spacing:-.3px;
+    }
+
+    /* ─── BOOKING CARD ─── */
+    .booking-card{
+      background:var(--white);
+      border:1px solid var(--border);
+      border-radius:20px;
+      padding:16px;
+      box-shadow:var(--sh3);
+      margin-bottom:14px;
+    }
+    .section-label{
+      font-size:11px;font-weight:600;
+      letter-spacing:.08em;text-transform:uppercase;
+      color:var(--muted);margin-bottom:12px;
+    }
+
+    /* INPUTS */
+    .input-group{position:relative}
+    .input-row{
+      display:flex;align-items:center;gap:10px;
+      padding:13px 13px;
+      background:#f8fafc;
+      border:1.5px solid var(--border);
+      transition:border-color .18s,background .18s;
+      cursor:text;
+    }
+    .input-row:first-child{border-radius:13px 13px 0 0;border-bottom-color:transparent}
+    .input-row:last-of-type{border-radius:0 0 13px 13px}
+    .input-row:hover{background:#f0f9ff;border-color:var(--border-focus)}
+    .input-row:focus-within{background:var(--accent-light);border-color:var(--accent)!important}
+
+    .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .dot-green{background:var(--green);box-shadow:0 0 0 3px rgba(5,150,105,.15)}
+    .dot-blue{background:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+
+    .ifield{
+      flex:1;background:none;border:none;outline:none;
+      color:var(--text);
+      font-family:'Inter',sans-serif;
+      font-size:14px;
+      caret-color:var(--accent);
+    }
+    .ifield::placeholder{color:var(--muted)}
+    .xbtn{
+      width:20px;height:20px;border-radius:50%;
+      background:var(--border);border:none;
+      color:var(--sub);font-size:11px;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      opacity:0;transition:opacity .15s;flex-shrink:0;
+    }
+
+    /* Connector */
+    .connector{height:22px;position:relative;display:flex;align-items:center;padding-left:18px}
+    .v-line{position:absolute;left:18px;top:0;bottom:0;width:1.5px;background:linear-gradient(to bottom,var(--green),var(--accent));opacity:.35}
+    .swap-btn{
+      position:absolute;right:10px;top:50%;transform:translateY(-50%);
+      width:28px;height:28px;
+      background:var(--white);border:1.5px solid var(--border);
+      border-radius:8px;color:var(--sub);
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      font-size:14px;transition:border-color .18s,color .18s,transform .3s;
+      box-shadow:var(--sh1);
+    }
+    .swap-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-50%) rotate(180deg)}
+
+    /* ─── VEHICLE TYPES ─── */
+    .vtypes{display:flex;gap:8px;margin-top:13px}
+    .vtype{
+      flex:1;padding:10px 5px;
+      background:#f8fafc;
+      border:1.5px solid var(--border);
+      border-radius:13px;cursor:pointer;text-align:center;
+      transition:all .18s;user-select:none;
+    }
+    .vtype:hover{border-color:var(--border-focus);background:var(--accent-light)}
+    .vtype.active{border-color:var(--accent);background:var(--accent-light)}
+    .vtype-icon{font-size:20px;display:block;margin-bottom:3px}
+    .vtype-name{font-size:11px;font-weight:600;color:var(--sub);line-height:1.2}
+    .vtype-price{
+      /* ── READABLE MONEY FONT ── */
+      font-family:'Roboto Mono',monospace;
+      font-size:10px;font-weight:600;
+      color:var(--muted);margin-top:3px;
+      letter-spacing:-.3px;
+    }
+    .vtype.active .vtype-name{color:var(--accent)}
+    .vtype.active .vtype-price{color:var(--accent)}
+
+    /* ─── PRICE BOX ─── */
+    .price-box{
+      display:none;margin-top:13px;
+      background:linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%);
+      border:1.5px solid var(--accent-mid);
+      border-radius:16px;
+      overflow:hidden;
+      animation:fadeUp .3s ease both;
+    }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+    .price-header{
+      padding:12px 14px 10px;
+      border-bottom:1px solid rgba(37,99,235,.1);
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .price-left-col{display:flex;align-items:baseline;gap:4px}
+
+    /* BIG PRICE NUMBER — easy to read */
+    .price-big{
+      font-family:'Roboto Mono',monospace;
+      font-size:28px;font-weight:600;
+      color:var(--accent);letter-spacing:-1px;
+      line-height:1;
+    }
+    .price-unit-label{
+      font-family:'Inter',sans-serif;
+      font-size:14px;font-weight:600;
+      color:var(--sub);
+    }
+    .demand-tag{
+      padding:3px 10px;border-radius:20px;
+      font-size:11px;font-weight:600;
+      background:var(--amber-bg);color:var(--amber);
+      border:1px solid #fde68a;
+      white-space:nowrap;
+    }
+    .demand-tag.low{background:var(--green-bg);color:var(--green);border-color:#a7f3d0}
+
+    .price-body{padding:10px 14px 12px;display:flex;flex-direction:column;gap:5px}
+    .pr{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+    .pr-label{color:var(--muted)}
+    .pr-val{
+      font-family:'Roboto Mono',monospace;
+      font-size:12px;font-weight:600;
+      color:var(--sub);letter-spacing:-.3px;
+    }
+    .pr-divider{height:1px;background:rgba(37,99,235,.1);margin:3px 0}
+    .pr.bold .pr-label{color:var(--text);font-weight:600;font-family:'Inter',sans-serif}
+    .pr.bold .pr-val{
+      font-family:'Roboto Mono',monospace;
+      font-size:13px;font-weight:700;
+      color:var(--accent);
+    }
+    .price-note{
+      padding:0 14px 10px;
+      font-size:10px;color:var(--muted);
+    }
+
+    /* ─── QUICK CHIPS ─── */
+    .chips{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;padding-bottom:1px}
+    .chips::-webkit-scrollbar{display:none}
+    .chip{
+      flex-shrink:0;padding:6px 12px;
+      background:var(--white);border:1px solid var(--border);
+      border-radius:20px;font-size:12px;color:var(--sub);
+      cursor:pointer;white-space:nowrap;
+      transition:all .15s;box-shadow:var(--sh1);
+    }
+    .chip:hover{background:var(--accent-light);border-color:var(--accent-mid);color:var(--accent)}
+
+    /* ─── PROMO CARD ─── */
+    .promo-card{
+      background:linear-gradient(135deg,#2563eb 0%,#06b6d4 100%);
+      border-radius:16px;padding:14px 16px;
+      margin-bottom:14px;
+      display:flex;align-items:center;justify-content:space-between;
+      box-shadow:0 4px 16px rgba(37,99,235,.25);
+    }
+    .promo-text{color:rgba(255,255,255,.85);font-size:12px;margin-bottom:3px}
+    .promo-title{color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px}
+    .promo-badge{
+      background:rgba(255,255,255,.2);
+      border:1px solid rgba(255,255,255,.3);
+      border-radius:10px;padding:6px 10px;
+      color:#fff;font-family:'Roboto Mono',monospace;
+      font-size:14px;font-weight:600;
+      letter-spacing:.5px;
+    }
+
+    /* ─── GO BUTTON ─── */
+    .go-btn{
+      width:100%;height:52px;
+      background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);
+      border:none;border-radius:16px;
+      color:#fff;
+      font-family:'Plus Jakarta Sans',sans-serif;
+      font-size:15px;font-weight:700;
+      cursor:pointer;
+      display:flex;align-items:center;justify-content:center;gap:8px;
+      box-shadow:0 4px 18px rgba(37,99,235,.32);
+      transition:all .18s;
+      margin-top:14px;
+    }
+    .go-btn:hover{box-shadow:0 6px 24px rgba(37,99,235,.42);transform:translateY(-1px)}
+    .go-btn:active{transform:scale(.98)}
+    .go-btn:disabled{background:#94a3b8;box-shadow:none;cursor:not-allowed;transform:none}
+    .spinner{display:none;width:19px;height:19px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* ─── HOME INDICATOR ─── */
+    .home-indicator{
+      height:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    }
+    .home-bar{width:120px;height:5px;background:#1e293b;border-radius:3px;opacity:.15}
+  </style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="phone">
+
+    <!-- Notch -->
+    <div class="notch">
+      <div class="notch-cam"></div>
+      <div class="notch-speaker"></div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <span class="status-time" id="clk">--:--</span>
+      <div class="status-icons">
+        <span>●●●</span>
+        <span>WiFi</span>
+        <span>🔋</span>
+      </div>
+    </div>
+
+    <!-- Scrollable screen -->
+    <div class="screen">
+
+      <!-- Logo -->
+      <div class="logo-row">
+        <div class="logo-left">
+          <div class="logo-icon">🛵</div>
+          <span class="logo-text">GoRide</span>
+        </div>
+        <div class="live-pill">
+          <div class="live-dot"></div>
+          Trực tuyến
+        </div>
+      </div>
+
+      <!-- Greeting -->
+      <div class="greeting">
+        <div class="greeting-sub">Xin chào 👋</div>
+        <div class="greeting-main">Bạn muốn đi đâu hôm nay?</div>
+      </div>
+
+      <!-- Booking card -->
+      <div class="booking-card">
+        <div class="section-label">Nhập địa điểm</div>
+
+        <div class="input-group">
+          <div class="input-row" onclick="this.querySelector('input').focus()">
+            <div class="dot dot-green"></div>
+            <input class="ifield" id="pickup" type="text"
+              placeholder="Điểm đón của bạn..."
+              autocomplete="off"
+              oninput="toggleX(this,'x1');schedulePrice()"
+            />
+            <button class="xbtn" id="x1" type="button" onclick="clearF('pickup','x1')">✕</button>
+          </div>
+          <div class="connector">
+            <div class="v-line"></div>
+            <button class="swap-btn" type="button" onclick="swapInputs()">⇅</button>
+          </div>
+          <div class="input-row" onclick="this.querySelector('input').focus()">
+            <div class="dot dot-blue"></div>
+            <input class="ifield" id="destination" type="text"
+              placeholder="Bạn muốn đến đâu?"
+              autocomplete="off"
+              oninput="toggleX(this,'x2');schedulePrice()"
+            />
+            <button class="xbtn" id="x2" type="button" onclick="clearF('destination','x2')">✕</button>
+          </div>
+        </div>
+
+        <!-- Vehicle types -->
+        <div class="vtypes">
+          <div class="vtype active" onclick="selectVtype('bike',this)">
+            <span class="vtype-icon">🛵</span>
+            <div class="vtype-name">Xe máy</div>
+            <div class="vtype-price" id="vp-bike">--</div>
+          </div>
+          <div class="vtype" onclick="selectVtype('car4',this)">
+            <span class="vtype-icon">🚗</span>
+            <div class="vtype-name">4 chỗ</div>
+            <div class="vtype-price" id="vp-car4">--</div>
+          </div>
+          <div class="vtype" onclick="selectVtype('car7',this)">
+            <span class="vtype-icon">🚐</span>
+            <div class="vtype-name">7 chỗ</div>
+            <div class="vtype-price" id="vp-car7">--</div>
+          </div>
+        </div>
+
+        <!-- Price breakdown -->
+        <div class="price-box" id="priceBox">
+          <div class="price-header">
+            <div class="price-left-col">
+              <span class="price-big" id="priceNum">--</span>
+              <span class="price-unit-label">₫</span>
+            </div>
+            <span class="demand-tag" id="demandBadge">--</span>
+          </div>
+          <div class="price-body">
+            <div class="pr">
+              <span class="pr-label">📏 Khoảng cách</span>
+              <span class="pr-val" id="prKm">-- km</span>
+            </div>
+            <div class="pr">
+              <span class="pr-label">⏱ Thời gian</span>
+              <span class="pr-val" id="prTime">-- phút</span>
+            </div>
+            <div class="pr">
+              <span class="pr-label">🚦 Phụ phí nhu cầu</span>
+              <span class="pr-val" id="prSur">--</span>
+            </div>
+            <div class="pr-divider"></div>
+            <div class="pr bold">
+              <span class="pr-label">💳 Tổng cộng</span>
+              <span class="pr-val" id="prTotal">--</span>
+            </div>
+          </div>
+          <div class="price-note">* Giá ước tính – tài xế xác nhận giá cuối khi nhận chuyến</div>
+        </div>
+
+        <!-- Submit -->
+        <form method="POST" action="/" onsubmit="return handleSubmit(event)">
+          <input type="hidden" id="f_pickup" name="pickup"/>
+          <input type="hidden" id="f_dest"   name="destination"/>
+          <input type="hidden" id="f_vtype"  name="vehicle_type" value="bike"/>
+          <button type="submit" class="go-btn" id="goBtn">
+            <div class="spinner" id="spin"></div>
+            <span id="btnTxt">🔍 &nbsp;Tìm tài xế ngay</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Quick chips -->
+      <div class="chips">
+        <div class="chip" onclick="fill('destination','Sân bay Tân Sơn Nhất, TP.HCM')">✈ Sân bay TSN</div>
+        <div class="chip" onclick="fill('destination','Bến Thành, Quận 1, TP.HCM')">🏢 Bến Thành</div>
+        <div class="chip" onclick="fill('destination','Landmark 81, Bình Thạnh')">🏙 Landmark 81</div>
+        <div class="chip" onclick="fill('destination','Vincom Đồng Khởi, Quận 1')">🛍 Vincom</div>
+        <div class="chip" onclick="fill('destination','Phú Mỹ Hưng, Quận 7')">🌆 Phú Mỹ Hưng</div>
+      </div>
+
+      <!-- Promo banner -->
+      <div class="promo-card">
+        <div>
+          <div class="promo-text">Ưu đãi hôm nay</div>
+          <div class="promo-title">Giảm 20% chuyến đầu tiên 🎉</div>
+        </div>
+        <div class="promo-badge">FIRST20</div>
+      </div>
+
+    </div><!-- /screen -->
+
+    <!-- Home indicator -->
+    <div class="home-indicator"><div class="home-bar"></div></div>
+
+  </div><!-- /phone -->
+</div><!-- /shell -->
+
+<script>
+/* CLOCK */
+function updateClock(){
+  const n=new Date();
+  document.getElementById('clk').textContent=
+    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+}
+updateClock(); setInterval(updateClock,30000);
+
+/* INPUT HELPERS */
+function toggleX(el,id){document.getElementById(id).style.opacity=el.value?'1':'0'}
+function clearF(fid,xid){document.getElementById(fid).value='';document.getElementById(xid).style.opacity='0';schedulePrice()}
+function fill(fid,val){
+  document.getElementById(fid).value=val;
+  document.getElementById(fid==='pickup'?'x1':'x2').style.opacity='1';
+  schedulePrice();
+}
+function swapInputs(){
+  const p=document.getElementById('pickup'),d=document.getElementById('destination');
+  [p.value,d.value]=[d.value,p.value];
+  document.getElementById('x1').style.opacity=p.value?'1':'0';
+  document.getElementById('x2').style.opacity=d.value?'1':'0';
+  schedulePrice();
+}
+
+/* VEHICLE */
+const RATES={bike:{base:15000,perKm:9500,min:15000},car4:{base:25000,perKm:16500,min:30000},car7:{base:35000,perKm:20000,min:45000}};
+let curVtype='bike';
+function selectVtype(type,el){
+  document.querySelectorAll('.vtype').forEach(v=>v.classList.remove('active'));
+  el.classList.add('active');
+  curVtype=type;
+  document.getElementById('f_vtype').value=type;
+  renderPrice();
+}
+
+/* GEOCODE */
+const geoCache={};
+async function geocodeAddr(addr){
+  if(geoCache[addr]) return geoCache[addr];
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`,{headers:{'Accept-Language':'vi'}});
+    const j=await r.json();
+    if(j.length){const res={lat:+j[0].lat,lon:+j[0].lon};geoCache[addr]=res;return res;}
+  }catch(e){}
+  return null;
+}
+function haversine(la1,lo1,la2,lo2){
+  const R=6371,dL=(la2-la1)*Math.PI/180,dO=(lo2-lo1)*Math.PI/180;
+  const a=Math.sin(dL/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dO/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+/* FUZZY DEMAND */
+function tri(x,a,b,c){if(x<=a||x>=c)return 0;if(x<=b)return(x-a)/(b-a);return(c-x)/(c-b)}
+function trap(x,a,b,c,d){if(x<=a||x>=d)return 0;if(x<=b)return(x-a)/(b-a);if(x<=c)return 1;return(d-x)/(d-c)}
+function demandLevel(h,dow){
+  const m=tri(h,6.5,8,9.5),e=tri(h,16.5,18,20);
+  const n=Math.min(1,trap(h,22,23,24,24)+trap(h,0,0,1,2));
+  return Math.min(1,Math.max(m,e,n*.7)+(dow>=5?.09:0));
+}
+
+/* FARE */
+function circuity(km){return km<2?1.5:km<5?1.38:km<10?1.28:1.22}
+function calcFare(sKm,type){
+  const rKm=sKm*circuity(sKm),r=RATES[type];
+  const now=new Date(),h=now.getHours()+now.getMinutes()/60,dow=now.getDay()===0?6:now.getDay()-1;
+  const demand=demandLevel(h,dow);
+  const base=r.base+rKm*r.perKm;
+  const sur=base*demand*.40;
+  const disc=rKm>15?base*.08:rKm>8?base*.04:0;
+  const total=Math.max(r.min,Math.round((base+sur-disc)/1000)*1000);
+  return{fare:total,roadKm:rKm,sur:Math.round(sur/1000)*1000,demand};
+}
+
+/* FORMAT — dễ đọc với dấu chấm hàng nghìn */
+function fmt(n){
+  if(n>=1000000) return (n/1000000).toFixed(2).replace(/\.?0+$/,'')+'M';
+  return n.toLocaleString('vi-VN');
+}
+function demandLabel(d){return d>.7?'Rất cao 🔴':d>.4?'Cao 🟠':'Bình thường 🟢'}
+
+let priceState=null;
+function renderPrice(){
+  if(!priceState) return;
+  const {sKm}=priceState;
+  const {fare,roadKm,sur,demand}=calcFare(sKm,curVtype);
+  const eta=Math.ceil(roadKm/25*60);
+
+  document.getElementById('priceNum').textContent=fmt(fare);
+  document.getElementById('prTotal').textContent=fmt(fare)+'₫';
+  document.getElementById('prKm').textContent=roadKm.toFixed(1)+' km';
+  document.getElementById('prTime').textContent=eta+' phút';
+  document.getElementById('prSur').textContent=sur>0?'+'+fmt(sur)+'₫':'Không có';
+
+  const badge=document.getElementById('demandBadge');
+  badge.textContent=demandLabel(demand);
+  badge.className='demand-tag'+(demand<.4?' low':'');
+
+  ['bike','car4','car7'].forEach(t=>{
+    const el=document.getElementById('vp-'+t);
+    if(el){const f=calcFare(sKm,t).fare;el.textContent=fmt(f)+'₫'}
+  });
+  document.getElementById('priceBox').style.display='block';
+}
+
+let priceTimer=null;
+function schedulePrice(){
+  clearTimeout(priceTimer);
+  const p=document.getElementById('pickup').value.trim();
+  const d=document.getElementById('destination').value.trim();
+  if(!p||!d){
+    document.getElementById('priceBox').style.display='none';
+    ['bike','car4','car7'].forEach(t=>{const el=document.getElementById('vp-'+t);if(el)el.textContent='--'});
+    priceState=null; return;
+  }
+  priceTimer=setTimeout(async()=>{
+    document.getElementById('priceNum').textContent='...';
+    document.getElementById('priceBox').style.display='block';
+    const [l1,l2]=await Promise.all([geocodeAddr(p),geocodeAddr(d)]);
+    if(!l1||!l2){document.getElementById('priceNum').textContent='?';return}
+    priceState={sKm:haversine(l1.lat,l1.lon,l2.lat,l2.lon)};
+    renderPrice();
+  },700);
+}
+
+/* SUBMIT */
+function handleSubmit(e){
+  const p=document.getElementById('pickup').value.trim();
+  const d=document.getElementById('destination').value.trim();
+  if(!p||!d){e.preventDefault();alert('Vui lòng nhập điểm đón và điểm đến!');return false}
+  document.getElementById('f_pickup').value=p;
+  document.getElementById('f_dest').value=d;
+  const btn=document.getElementById('goBtn');
+  btn.disabled=true;
+  document.getElementById('spin').style.display='block';
+  document.getElementById('btnTxt').style.opacity='0';
+  return true;
+}
+</script>
+</body>
+</html>

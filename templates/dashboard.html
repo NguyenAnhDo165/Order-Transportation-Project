@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GoRide Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=Roboto+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#f1f5f9;
+      --card:#fff;
+      --border:#e2e8f0;
+      --border2:#cbd5e1;
+      --accent:#2563eb;--accent-dk:#1d4ed8;--accent-light:#eff6ff;--accent-mid:#bfdbfe;
+      --text:#0f172a;--sub:#475569;--muted:#94a3b8;
+      --green:#059669;--green-bg:#ecfdf5;--green-mid:#a7f3d0;
+      --amber:#b45309;--amber-bg:#fffbeb;
+      --red:#dc2626;--red-bg:#fff1f2;--red-mid:#fecaca;
+      --purple:#7c3aed;--purple-bg:#f5f3ff;
+      --sh1:0 1px 3px rgba(0,0,0,.06);
+      --sh2:0 4px 16px rgba(15,23,42,.08);
+      --sh3:0 8px 32px rgba(15,23,42,.12);
+      --r:14px;
+    }
+    html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+
+    /* SIDEBAR */
+    .layout{display:flex;height:100vh;overflow:hidden}
+    .sidebar{width:220px;flex-shrink:0;background:var(--text);display:flex;flex-direction:column;padding:0}
+    .sb-logo{padding:22px 20px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .sb-logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#2563eb,#06b6d4);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+    .sb-logo-text{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;color:#fff;letter-spacing:-.4px}
+    .sb-logo-badge{font-size:10px;color:rgba(255,255,255,.4);font-weight:500;margin-top:1px}
+    .sb-nav{padding:14px 10px;display:flex;flex-direction:column;gap:2px;flex:1}
+    .sb-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;color:rgba(255,255,255,.55);font-size:13px;font-weight:500;cursor:pointer;transition:all .18s}
+    .sb-item:hover{background:rgba(255,255,255,.07);color:#fff}
+    .sb-item.active{background:rgba(37,99,235,.25);color:#fff}
+    .sb-icon{font-size:16px;width:20px;text-align:center}
+    .sb-bottom{padding:14px 10px;border-top:1px solid rgba(255,255,255,.08)}
+    .sb-user{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;cursor:pointer}
+    .sb-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#06b6d4);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+    .sb-uname{font-size:12px;font-weight:600;color:rgba(255,255,255,.7)}
+    .sb-urole{font-size:10px;color:rgba(255,255,255,.35)}
+    .live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#10b981;animation:blink 1.8s ease-in-out infinite;margin-left:4px;vertical-align:middle}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+    /* MAIN */
+    .main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+    .topbar{position:sticky;top:0;z-index:10;background:rgba(241,245,249,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+    .topbar-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:800;color:var(--text);letter-spacing:-.3px}
+    .topbar-right{display:flex;align-items:center;gap:10px}
+    .topbar-pill{display:flex;align-items:center;gap:5px;padding:5px 12px;background:var(--green-bg);border:1px solid var(--green-mid);border-radius:20px;font-size:12px;font-weight:600;color:var(--green)}
+    .topbar-pill.idle{background:var(--amber-bg);border-color:#fde68a;color:var(--amber)}
+    .refresh-btn{width:34px;height:34px;border:1.5px solid var(--border);border-radius:10px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;transition:all .18s}
+    .refresh-btn:hover{border-color:var(--accent);background:var(--accent-light)}
+
+    .content{padding:24px 28px;display:flex;flex-direction:column;gap:20px;flex:1}
+
+    /* STAT CARDS */
+    .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    .stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh1);position:relative;overflow:hidden;transition:box-shadow .18s}
+    .stat-card:hover{box-shadow:var(--sh2)}
+    .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
+    .stat-card.blue::before{background:linear-gradient(90deg,#2563eb,#06b6d4)}
+    .stat-card.green::before{background:linear-gradient(90deg,#059669,#10b981)}
+    .stat-card.amber::before{background:linear-gradient(90deg,#b45309,#f59e0b)}
+    .stat-card.purple::before{background:linear-gradient(90deg,#7c3aed,#a78bfa)}
+    .stat-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+    .stat-value{font-family:'Roboto Mono',monospace;font-size:26px;font-weight:700;color:var(--text);letter-spacing:-1px;line-height:1}
+    .stat-sub{font-size:11px;color:var(--muted);margin-top:4px}
+    .stat-icon{position:absolute;right:14px;top:14px;font-size:22px;opacity:.15}
+
+    /* ACTIVE RIDE PANEL */
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .section-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.2px}
+    .section-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+
+    .ride-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh2);overflow:hidden}
+    .ride-panel-header{padding:14px 18px;background:linear-gradient(135deg,var(--accent-light),#ecfdf5);border-bottom:1px solid var(--accent-mid);display:flex;align-items:center;justify-content:space-between}
+    .rph-left{display:flex;align-items:center;gap:10px}
+    .rph-status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:blink 1.5s ease-in-out infinite;flex-shrink:0}
+    .rph-label{font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--text)}
+    .rph-sub{font-size:11px;color:var(--sub);margin-top:1px}
+
+    /* Complete ride button */
+    .complete-btn{
+      display:flex;align-items:center;gap:7px;
+      padding:9px 18px;
+      background:linear-gradient(135deg,var(--green),#10b981);
+      color:#fff;border:none;border-radius:11px;
+      font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;
+      cursor:pointer;
+      box-shadow:0 3px 12px rgba(5,150,105,.35);
+      transition:all .18s;
+      letter-spacing:-.2px;
+    }
+    .complete-btn:hover{background:linear-gradient(135deg,#047857,#059669);transform:translateY(-1px);box-shadow:0 5px 18px rgba(5,150,105,.45)}
+    .complete-btn:active{transform:translateY(0)}
+    .complete-btn:disabled{background:var(--muted);box-shadow:none;cursor:not-allowed;transform:none}
+
+    .ride-body{padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .ride-field{display:flex;flex-direction:column;gap:3px}
+    .rf-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+    .rf-value{font-family:'Roboto Mono',monospace;font-size:14px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+    .rf-value.accent{color:var(--accent)}
+    .rf-value.green{color:var(--green)}
+    .rf-value.large{font-size:18px;letter-spacing:-1px}
+
+    /* Idle state */
+    .idle-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:36px 28px;text-align:center;box-shadow:var(--sh1)}
+    .idle-icon{font-size:44px;margin-bottom:12px;opacity:.5}
+    .idle-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;color:var(--sub)}
+    .idle-sub{font-size:12px;color:var(--muted);margin-top:4px}
+
+    /* REVIEWS TABLE */
+    .reviews-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh1);overflow:hidden}
+    .reviews-table{width:100%;border-collapse:collapse}
+    .reviews-table th{padding:10px 16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);background:#f8fafc;border-bottom:1.5px solid var(--border);text-align:left}
+    .reviews-table td{padding:11px 16px;font-size:12px;color:var(--sub);border-bottom:1px solid var(--border)}
+    .reviews-table tr:last-child td{border-bottom:none}
+    .reviews-table tr:hover td{background:#f8fafc}
+    .review-driver-cell{font-weight:600;color:var(--text)}
+    .review-plate-cell{font-family:'Roboto Mono',monospace;font-size:11px}
+    .stars-cell{color:#f59e0b;font-size:13px;letter-spacing:1px}
+    .tags-cell{display:flex;gap:4px;flex-wrap:wrap}
+    .tag-chip{padding:2px 7px;border-radius:10px;background:var(--accent-light);color:var(--accent);font-size:10px;font-weight:600;border:1px solid var(--accent-mid)}
+    .empty-row td{text-align:center;padding:28px;color:var(--muted);font-style:italic}
+    .ts-cell{font-family:'Roboto Mono',monospace;font-size:10px;color:var(--muted)}
+
+    /* Notifications */
+    .notif{
+      position:fixed;top:20px;right:20px;z-index:9999;
+      background:var(--text);color:#fff;
+      padding:12px 18px;border-radius:12px;
+      font-size:13px;font-weight:600;
+      box-shadow:var(--sh3);
+      display:flex;align-items:center;gap:8px;
+      transform:translateX(120%);
+      transition:transform .35s cubic-bezier(.16,1,.3,1);
+      max-width:300px;
+    }
+    .notif.show{transform:translateX(0)}
+    .notif.success{background:linear-gradient(135deg,var(--green),#10b981)}
+    .notif.error{background:linear-gradient(135deg,var(--red),#ef4444)}
+
+    /* Confirm modal */
+    .modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+    .modal-overlay.show{opacity:1;pointer-events:all}
+    .modal-card{background:var(--card);border-radius:20px;padding:28px 24px;width:340px;box-shadow:var(--sh3);transform:scale(.92);transition:transform .3s cubic-bezier(.16,1,.3,1);text-align:center;display:flex;flex-direction:column;gap:14px}
+    .modal-overlay.show .modal-card{transform:scale(1)}
+    .modal-icon{font-size:40px}
+    .modal-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:800;color:var(--text);letter-spacing:-.3px}
+    .modal-sub{font-size:13px;color:var(--sub);line-height:1.5}
+    .modal-ride-info{background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:12px 14px;text-align:left;display:flex;flex-direction:column;gap:6px}
+    .mri-row{display:flex;justify-content:space-between;font-size:12px}
+    .mri-label{color:var(--muted)}
+    .mri-value{font-family:'Roboto Mono',monospace;font-weight:700;color:var(--text)}
+    .mri-value.green{color:var(--green)}
+    .modal-actions{display:flex;gap:8px}
+    .modal-cancel{flex:1;height:42px;border:1.5px solid var(--border);background:var(--card);border-radius:11px;color:var(--sub);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+    .modal-cancel:hover{border-color:var(--border2);background:#f8fafc}
+    .modal-confirm{flex:1.5;height:42px;border:none;border-radius:11px;background:linear-gradient(135deg,var(--green),#10b981);color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(5,150,105,.3);transition:all .18s}
+    .modal-confirm:hover{background:linear-gradient(135deg,#047857,#059669);transform:translateY(-1px)}
+
+    @media(max-width:900px){
+      .sidebar{width:64px}
+      .sb-logo-text,.sb-logo-badge,.sb-item span:last-child,.sb-uname,.sb-urole{display:none}
+      .stats-row{grid-template-columns:repeat(2,1fr)}
+      .ride-body{grid-template-columns:1fr}
+      .content{padding:16px}
+      .topbar{padding:12px 16px}
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-icon">🛵</div>
+      <div>
+        <div class="sb-logo-text">GoRide</div>
+        <div class="sb-logo-badge">Admin Dashboard</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-item active"><span class="sb-icon">📊</span><span>Tổng quan</span></div>
+      <div class="sb-item" onclick="window.location.href='/'"><span class="sb-icon">🛵</span><span>Đặt xe</span></div>
+      <div class="sb-item" onclick="loadReviews()"><span class="sb-icon">⭐</span><span>Đánh giá</span></div>
+    </nav>
+    <div class="sb-bottom">
+      <div class="sb-user">
+        <div class="sb-avatar">A</div>
+        <div><div class="sb-uname">Admin</div><div class="sb-urole">Quản trị viên</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title">📊 Dashboard GoRide</div>
+      <div class="topbar-right">
+        <div class="topbar-pill idle" id="statusPill"><span class="live-dot"></span><span id="statusText">Đang tải...</span></div>
+        <div class="refresh-btn" onclick="refresh()" title="Làm mới">🔄</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- STATS -->
+      <div class="stats-row">
+        <div class="stat-card blue">
+          <div class="stat-icon">🛵</div>
+          <div class="stat-label">Tổng chuyến xe</div>
+          <div class="stat-value" id="s-rides">—</div>
+          <div class="stat-sub">Kể từ khi khởi động</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon">💰</div>
+          <div class="stat-label">Doanh thu</div>
+          <div class="stat-value" id="s-rev">—</div>
+          <div class="stat-sub">Tổng tích lũy (₫)</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-icon">⭐</div>
+          <div class="stat-label">Đánh giá TB</div>
+          <div class="stat-value" id="s-stars">—</div>
+          <div class="stat-sub" id="s-reviews-sub">Từ 0 đánh giá</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-icon">📝</div>
+          <div class="stat-label">Tổng đánh giá</div>
+          <div class="stat-value" id="s-reviews">—</div>
+          <div class="stat-sub">Khách hàng gửi</div>
+        </div>
+      </div>
+
+      <!-- ACTIVE RIDE -->
+      <div>
+        <div class="section-header">
+          <div class="section-title">🚗 Cuốc xe hiện tại</div>
+          <div class="section-badge" id="rideBadge" style="background:var(--amber-bg);color:var(--amber);border:1px solid #fde68a">Chờ cập nhật</div>
+        </div>
+        <div id="rideContainer"></div>
+      </div>
+
+      <!-- REVIEWS -->
+      <div>
+        <div class="section-header">
+          <div class="section-title">⭐ Lịch sử đánh giá</div>
+          <button style="padding:5px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);font-size:12px;font-weight:600;cursor:pointer;color:var(--sub)" onclick="loadReviews()">Tải lại</button>
+        </div>
+        <div class="reviews-card">
+          <table class="reviews-table">
+            <thead>
+              <tr>
+                <th>Thời gian</th>
+                <th>Tài xế</th>
+                <th>Biển số</th>
+                <th>Sao</th>
+                <th>Tags</th>
+                <th>Nhận xét</th>
+              </tr>
+            </thead>
+            <tbody id="reviewsTbody">
+              <tr class="empty-row"><td colspan="6">Đang tải đánh giá...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-card">
+    <div class="modal-icon">✅</div>
+    <div class="modal-title">Hoàn thành chuyến xe?</div>
+    <div class="modal-sub">Xác nhận tài xế đã đưa khách đến điểm đến thành công.</div>
+    <div class="modal-ride-info" id="modalRideInfo"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Huỷ</button>
+      <button class="modal-confirm" onclick="doComplete()">✓ Xác nhận hoàn thành</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif"></div>
+
+<script>
+var currentRide = null;
+
+/* ─── Notification ─── */
+function showNotif(msg, type){
+  var n = document.getElementById('notif');
+  n.textContent = (type==='success' ? '✓ ' : type==='error' ? '✗ ' : 'ℹ ') + msg;
+  n.className = 'notif show ' + (type||'');
+  setTimeout(function(){ n.classList.remove('show'); }, 3500);
+}
+
+/* ─── Format numbers ─── */
+function fmt(n){ return Number(n).toLocaleString('vi-VN'); }
+function fmtStars(n){ return parseFloat(n).toFixed(1); }
+
+/* ─── Load stats ─── */
+function loadStats(){
+  fetch('/api/stats').then(function(r){return r.json()}).then(function(d){
+    document.getElementById('s-rides').textContent = d.total_rides;
+    document.getElementById('s-rev').textContent   = fmt(d.total_revenue);
+    document.getElementById('s-stars').textContent = d.avg_stars ? fmtStars(d.avg_stars) : '—';
+    document.getElementById('s-reviews').textContent = d.total_reviews;
+    document.getElementById('s-reviews-sub').textContent = 'Từ ' + d.total_reviews + ' đánh giá';
+  }).catch(function(){});
+}
+
+/* ─── Load ride status ─── */
+function loadRideStatus(){
+  fetch('/ride_status').then(function(r){return r.json()}).then(function(d){
+    currentRide = d.current;
+    var pill = document.getElementById('statusPill');
+    var text = document.getElementById('statusText');
+    var badge = document.getElementById('rideBadge');
+
+    if(d.status === 'waiting' && d.current){
+      pill.className = 'topbar-pill';
+      text.textContent = 'Đang có chuyến';
+      badge.textContent = '🟢 Đang chạy';
+      badge.style.cssText = 'background:var(--green-bg);color:var(--green);border:1px solid var(--green-mid)';
+      renderActiveRide(d.current);
+    } else if(d.status === 'completed'){
+      pill.className = 'topbar-pill';
+      text.textContent = 'Chuyến hoàn thành';
+      badge.textContent = '✅ Xong';
+      badge.style.cssText = 'background:#f0fdf4;color:#059669;border:1px solid #a7f3d0';
+      renderIdlePanel('Chuyến vừa hoàn thành. Đang chờ đánh giá...');
+    } else {
+      pill.className = 'topbar-pill idle';
+      text.textContent = 'Rảnh';
+      badge.textContent = '⚪ Không có chuyến';
+      badge.style.cssText = 'background:#f8fafc;color:var(--muted);border:1px solid var(--border)';
+      renderIdlePanel('Chưa có chuyến xe nào đang hoạt động.');
+    }
+  }).catch(function(){});
+}
+
+function renderActiveRide(r){
+  var html = '<div class="ride-panel">' +
+    '<div class="ride-panel-header">' +
+      '<div class="rph-left">' +
+        '<div class="rph-status-dot"></div>' +
+        '<div>' +
+          '<div class="rph-label">Chuyến đang hoạt động</div>' +
+          '<div class="rph-sub">Tài xế đang trên đường</div>' +
+        '</div>' +
+      '</div>' +
+      '<button class="complete-btn" onclick="openConfirmModal()">' +
+        '<span>✓</span><span>Hoàn thành chuyến xe</span>' +
+      '</button>' +
+    '</div>' +
+    '<div class="ride-body">' +
+      '<div class="ride-field"><div class="rf-label">Tài xế</div><div class="rf-value">' + (r.driver_name||'—') + '</div></div>' +
+      '<div class="ride-field"><div class="rf-label">Biển số</div><div class="rf-value">' + (r.plate||'—') + '</div></div>' +
+      '<div class="ride-field"><div class="rf-label">Khoảng cách</div><div class="rf-value accent">' + (r.road_km||'—') + ' km</div></div>' +
+      '<div class="ride-field"><div class="rf-label">ETA</div><div class="rf-value">' + (r.eta||'—') + ' phút</div></div>' +
+      '<div class="ride-field"><div class="rf-label">Cước phí</div><div class="rf-value green large">' + (r.fare||'—') + '₫</div></div>' +
+    '</div>' +
+  '</div>';
+  document.getElementById('rideContainer').innerHTML = html;
+}
+
+function renderIdlePanel(msg){
+  document.getElementById('rideContainer').innerHTML =
+    '<div class="idle-panel">' +
+      '<div class="idle-icon">🛵</div>' +
+      '<div class="idle-title">' + msg + '</div>' +
+      '<div class="idle-sub">Truy cập <a href="/" style="color:var(--accent)">trang đặt xe</a> để bắt đầu chuyến mới</div>' +
+    '</div>';
+}
+
+/* ─── Modal ─── */
+function openConfirmModal(){
+  if(!currentRide){showNotif('Không có chuyến xe đang hoạt động','error');return}
+  var info = document.getElementById('modalRideInfo');
+  info.innerHTML =
+    '<div class="mri-row"><span class="mri-label">Tài xế</span><span class="mri-value">' + (currentRide.driver_name||'—') + '</span></div>' +
+    '<div class="mri-row"><span class="mri-label">Biển số</span><span class="mri-value">' + (currentRide.plate||'—') + '</span></div>' +
+    '<div class="mri-row"><span class="mri-label">Khoảng cách</span><span class="mri-value">' + (currentRide.road_km||'—') + ' km</span></div>' +
+    '<div class="mri-row"><span class="mri-label">Cước phí</span><span class="mri-value green">' + (currentRide.fare||'—') + '₫</span></div>';
+  document.getElementById('confirmModal').classList.add('show');
+}
+function closeModal(){
+  document.getElementById('confirmModal').classList.remove('show');
+}
+
+function doComplete(){
+  closeModal();
+  fetch('/complete_ride',{method:'POST'}).then(function(r){return r.json()}).then(function(d){
+    if(d.ok){
+      showNotif('Chuyến xe đã hoàn thành!','success');
+      setTimeout(refresh, 800);
+    } else {
+      showNotif('Có lỗi xảy ra','error');
+    }
+  }).catch(function(){showNotif('Không kết nối được server','error')});
+}
+
+/* ─── Reviews ─── */
+function loadReviews(){
+  fetch('/api/reviews').then(function(r){return r.json()}).then(function(d){
+    var rows = d.reviews || [];
+    var tbody = document.getElementById('reviewsTbody');
+    if(!rows.length){
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">Chưa có đánh giá nào</td></tr>';
+      return;
+    }
+    /* Sort newest first */
+    rows = rows.slice().reverse();
+    tbody.innerHTML = rows.map(function(r){
+      var stars = parseInt(r.stars)||0;
+      var starStr = '⭐'.repeat(stars) + (stars ? ' <span style="font-size:11px;color:var(--muted)">(' + stars + ')</span>' : '—');
+      var tags = (r.tags||'').split(',').map(function(t){t=t.trim();return t?'<span class="tag-chip">'+t+'</span>':''}).join('');
+      var ts = r.timestamp ? r.timestamp.replace('T',' ').substring(0,16) : '—';
+      return '<tr>' +
+        '<td class="ts-cell">' + ts + '</td>' +
+        '<td class="review-driver-cell">' + (r.driver_name||'—') + '</td>' +
+        '<td class="review-plate-cell">' + (r.plate||'—') + '</td>' +
+        '<td class="stars-cell">' + starStr + '</td>' +
+        '<td><div class="tags-cell">' + (tags||'<span style="color:var(--muted);font-style:italic">Không có</span>') + '</div></td>' +
+        '<td style="color:var(--text);max-width:180px;word-break:break-word">' + (r.comment||'<span style="color:var(--muted);font-style:italic">—</span>') + '</td>' +
+      '</tr>';
+    }).join('');
+  }).catch(function(){
+    document.getElementById('reviewsTbody').innerHTML = '<tr class="empty-row"><td colspan="6">Lỗi tải dữ liệu</td></tr>';
+  });
+}
+
+/* ─── Refresh all ─── */
+function refresh(){
+  loadStats();
+  loadRideStatus();
+  loadReviews();
+}
+
+/* ─── Auto-refresh every 4s ─── */
+refresh();
+setInterval(refresh, 4000);
+
+/* Close modal on backdrop click */
+document.getElementById('confirmModal').addEventListener('click', function(e){
+  if(e.target === this) closeModal();
+});
+</script>
+</body>
+</html>
