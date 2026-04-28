@@ -1,3 +1,1 @@
 timestamp,ride_id,status,driver_name,plate,vehicle_type,pickup,destination,road_km,fare,fare_raw,driver_earn,payment_method,voucher_code
-2026-04-28 20:38:46,3390dd4a,completed,Lê Văn Phúc,61C4 - 6053,bike,"Bến Thành, Quận 1, TP.HCM","Landmark 81, Bình Thạnh",8.39,35000,35000,28000,,
-2026-04-28 20:42:35,c9e5ff2e,completed,Trần Ngọc Huy,50D2 - 2786,bike,"Bến Thành, Quận 1, TP.HCM","Landmark 81, Bình Thạnh",8.39,26000,26000,21000,,TETHOLIDAY

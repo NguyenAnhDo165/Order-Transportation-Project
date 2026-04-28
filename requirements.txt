@@ -4,3 +4,7 @@ osmnx
 networkx
 pyngrok
 python-dotenv
+
+numpy
+scikit-fuzzy
+scikit-learn

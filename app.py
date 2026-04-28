@@ -4,10 +4,22 @@ from geopy.distance import geodesic
 from geopy.extra.rate_limiter import RateLimiter
 import osmnx as ox
 import networkx as nx
-import csv, os, pickle, functools, math, random, threading, shutil
+import csv, os, pickle, functools, math, random, threading, shutil, json
 from datetime import datetime
 from pyngrok import ngrok
 from dotenv import load_dotenv
+
+# Optional: dùng skfuzzy để tính hệ số giá động.
+# Nếu máy chưa cài scikit-fuzzy thì app vẫn chạy bằng fuzzy thủ công bên dưới.
+try:
+    import numpy as np
+    import skfuzzy as fuzz
+    from skfuzzy import control as ctrl
+    SKFUZZY_AVAILABLE = True
+except Exception as _skfuzzy_err:
+    np = fuzz = ctrl = None
+    SKFUZZY_AVAILABLE = False
+    print(f"⚠️ scikit-fuzzy chưa sẵn sàng, dùng fuzzy thủ công: {_skfuzzy_err}")
 
 # ════════════════════════════════════════════════
 #  Ngrok
@@ -235,46 +247,228 @@ def fuzzy_score(rating, dist_km, trips):
     return sum(w*c for w,c in rules)/tw if tw else 0.0
 
 # ════════════════════════════════════════════════
-#  Fuzzy Fare Engine
+#  Pricing config + Fuzzy Fare Engine
 # ════════════════════════════════════════════════
-# Base pricing  (opening fee covers first 2 km)
-BASE = {
-    "bike": {"open":13_000,"per_km":4_500,"wait_min":500, "min":13_000},
-    "car4": {"open":22_000,"per_km":9_000,"wait_min":800, "min":22_000},
-    "car7": {"open":32_000,"per_km":12_000,"wait_min":1_000,"min":32_000},
+# Dashboard tab "Quản lý giá" lưu cấu hình vào pricing_config.json.
+# Restart/local host lại sẽ không mất giá đã chỉnh.
+PRICING_CONFIG_FILE = "pricing_config.json"
+
+DEFAULT_PRICING_CONFIG = {
+    "bike": {"open": 13_000, "per_km": 4_500,  "wait_min": 500,   "min": 13_000},
+    "car4": {"open": 22_000, "per_km": 9_000,  "wait_min": 800,   "min": 22_000},
+    "car7": {"open": 32_000, "per_km": 12_000, "wait_min": 1_000, "min": 32_000},
+    "surge_morning_pct": 55,
+    "surge_evening_pct": 60,
+    "surge_night_pct":   25,
+    "surge_weekend_pct": 20,
+    "surge_max_pct":     80,
+    "rain_min_pct":      10,
+    "rain_max_pct":      30,
+    "storm_pct":         50,
+    "night_pct":         12,
+    "region_disc_pct":    7,
+    "driver_share_pct":  80,
 }
-DRIVER_SHARE = 0.80   # 80% doanh thu về tài xế
-REGION_DISC  = 0.07   # 7% giảm cho tỉnh (Ninh Thuận style)
+
+def _clone_default_pricing():
+    return json.loads(json.dumps(DEFAULT_PRICING_CONFIG))
+
+def _merge_pricing(defaults: dict, loaded: dict) -> dict:
+    cfg = json.loads(json.dumps(defaults))
+    if not isinstance(loaded, dict):
+        return cfg
+    for key, val in loaded.items():
+        if key in cfg and isinstance(cfg[key], dict) and isinstance(val, dict):
+            for sub_key, sub_val in val.items():
+                if sub_key in cfg[key]:
+                    cfg[key][sub_key] = sub_val
+        elif key in cfg:
+            cfg[key] = val
+    return cfg
+
+def save_pricing_config(cfg: dict) -> None:
+    tmp = PRICING_CONFIG_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(cfg, f, ensure_ascii=False, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    shutil.move(tmp, PRICING_CONFIG_FILE)
+
+def load_pricing_config() -> dict:
+    if not os.path.exists(PRICING_CONFIG_FILE):
+        cfg = _clone_default_pricing()
+        save_pricing_config(cfg)
+        return cfg
+    try:
+        with open(PRICING_CONFIG_FILE, "r", encoding="utf-8") as f:
+            return _merge_pricing(DEFAULT_PRICING_CONFIG, json.load(f))
+    except Exception as e:
+        print(f"⚠️ Không đọc được {PRICING_CONFIG_FILE}, dùng giá mặc định: {e}")
+        return _clone_default_pricing()
+
+def _sync_pricing_globals():
+    """Đồng bộ biến runtime từ PRICING_CONFIG để calc_fare dùng ngay."""
+    global BASE, DRIVER_SHARE, REGION_DISC
+    BASE = {
+        "bike": dict(PRICING_CONFIG["bike"]),
+        "car4": dict(PRICING_CONFIG["car4"]),
+        "car7": dict(PRICING_CONFIG["car7"]),
+    }
+    DRIVER_SHARE = float(PRICING_CONFIG.get("driver_share_pct", 80)) / 100
+    REGION_DISC  = float(PRICING_CONFIG.get("region_disc_pct", 7)) / 100
+
+def _pct(key: str, default: float = 0) -> float:
+    try:
+        return float(PRICING_CONFIG.get(key, default))
+    except Exception:
+        return float(default)
+
+PRICING_CONFIG = load_pricing_config()
+BASE = {}
+DRIVER_SHARE = 0.80
+REGION_DISC = 0.07
+_sync_pricing_globals()
+
+
+_SKFUZZY_FARE_SYSTEM = None
+
+def _demand_level(hour: float, dow: int) -> float:
+    """0–1 demand score: cao ở giờ cao điểm/cuối tuần."""
+    morning = tri(hour, 6.5, 8.0, 9.5)
+    evening = tri(hour, 16.5, 18.0, 20.0)
+    weekend = 0.25 if dow >= 5 else 0.0
+    return round(min(1.0, max(morning, evening) + weekend), 3)
+
+def _weather_level(is_rain: bool = False, is_storm: bool = False) -> float:
+    """0 = bình thường, 1 = mưa, 2 = bão/mưa lớn."""
+    if is_storm:
+        return 2.0
+    if is_rain:
+        return 1.0
+    return 0.0
+
+def _build_skfuzzy_fare_system():
+    """Tạo control system cho hệ số giá động bằng scikit-fuzzy.
+
+    Các mức output lấy từ PRICING_CONFIG, tức tab Dashboard > Quản lý giá
+    chỉnh bao nhiêu thì hệ fuzzy dùng bấy nhiêu.
+    """
+    if not SKFUZZY_AVAILABLE:
+        return None
+
+    max_pct = max(0.0, _pct("surge_max_pct", 80))
+    max_mult = 1.0 + max_pct / 100
+    morning_mult = min(max_mult, 1.0 + max(0.0, _pct("surge_morning_pct", 55)) / 100)
+    evening_mult = min(max_mult, 1.0 + max(0.0, _pct("surge_evening_pct", 60)) / 100)
+    night_mult   = min(max_mult, 1.0 + max(0.0, _pct("surge_night_pct", 25)) / 100)
+    weekend_mult = min(max_mult, 1.0 + max(0.0, _pct("surge_weekend_pct", 20)) / 100)
+    rain_avg_pct = (max(0.0, _pct("rain_min_pct", 10)) + max(0.0, _pct("rain_max_pct", 30))) / 2
+    rain_mult    = min(max_mult, 1.0 + rain_avg_pct / 100)
+    storm_mult   = min(max_mult, 1.0 + max(0.0, _pct("storm_pct", 50)) / 100)
+
+    slight_center = max(1.05, min(max_mult, max(night_mult, weekend_mult, rain_mult)))
+    high_center   = max(slight_center, min(max_mult, max(morning_mult, evening_mult)))
+    very_center   = max(high_center, min(max_mult, max(storm_mult, morning_mult, evening_mult, max_mult)))
+
+    distance = ctrl.Antecedent(np.arange(0, 50.5, 0.5), "distance")
+    hour     = ctrl.Antecedent(np.arange(0, 24.5, 0.5), "hour")
+    demand   = ctrl.Antecedent(np.arange(0, 1.01, 0.01), "demand")
+    weather  = ctrl.Antecedent(np.arange(0, 2.01, 0.01), "weather")
+    surge    = ctrl.Consequent(np.arange(1.0, max_mult + 0.01, 0.01), "surge")
+
+    distance["short"]  = fuzz.trapmf(distance.universe, [0, 0, 2, 5])
+    distance["medium"] = fuzz.trimf(distance.universe, [3, 10, 20])
+    distance["long"]   = fuzz.trapmf(distance.universe, [15, 25, 50, 50])
+
+    hour["normal"]  = fuzz.trapmf(hour.universe, [9, 10, 15, 16])
+    hour["morning"] = fuzz.trimf(hour.universe, [6.5, 8, 9.5])
+    hour["evening"] = fuzz.trimf(hour.universe, [16.5, 18, 20])
+    hour["night"]   = np.fmax(
+        fuzz.trapmf(hour.universe, [22, 23, 24, 24]),
+        fuzz.trapmf(hour.universe, [0, 0, 1, 2])
+    )
+
+    demand["low"]    = fuzz.trapmf(demand.universe, [0, 0, 0.2, 0.4])
+    demand["medium"] = fuzz.trimf(demand.universe, [0.25, 0.5, 0.75])
+    demand["high"]   = fuzz.trapmf(demand.universe, [0.6, 0.8, 1, 1])
+
+    weather["clear"] = fuzz.trapmf(weather.universe, [0, 0, 0.2, 0.6])
+    weather["rain"]  = fuzz.trimf(weather.universe, [0.5, 1, 1.5])
+    weather["storm"] = fuzz.trapmf(weather.universe, [1.3, 1.7, 2, 2])
+
+    normal_hi = min(max_mult, 1.08)
+    surge["normal"]    = fuzz.trapmf(surge.universe, [1.00, 1.00, 1.02, normal_hi])
+    surge["slightly"]  = fuzz.trimf(surge.universe, [1.00, slight_center, min(max_mult, (slight_center + high_center) / 2)])
+    surge["high"]      = fuzz.trimf(surge.universe, [slight_center, high_center, very_center])
+    surge["very_high"] = fuzz.trapmf(surge.universe, [high_center, very_center, max_mult, max_mult])
+
+    rules = [
+        ctrl.Rule(demand["low"] & weather["clear"] & hour["normal"], surge["normal"]),
+        ctrl.Rule(hour["morning"] | hour["evening"], surge["high"]),
+        ctrl.Rule(hour["night"], surge["slightly"]),
+        ctrl.Rule(demand["high"], surge["high"]),
+        ctrl.Rule(demand["high"] & (hour["morning"] | hour["evening"]), surge["very_high"]),
+        ctrl.Rule(weather["rain"], surge["slightly"]),
+        ctrl.Rule(weather["storm"], surge["very_high"]),
+        ctrl.Rule(distance["long"] & demand["high"], surge["high"]),
+        ctrl.Rule(distance["short"] & demand["low"] & weather["clear"], surge["normal"]),
+        ctrl.Rule(distance["medium"] & demand["medium"], surge["slightly"]),
+    ]
+    return ctrl.ControlSystem(rules)
+
+def skfuzzy_surge(trip_km: float, hour: float, dow: int,
+                  is_rain: bool = False, is_storm: bool = False) -> float:
+    """Tính hệ số giá bằng scikit-fuzzy. Nếu lỗi, trả về None để fallback."""
+    global _SKFUZZY_FARE_SYSTEM
+    if not SKFUZZY_AVAILABLE:
+        return None
+    try:
+        if _SKFUZZY_FARE_SYSTEM is None:
+            _SKFUZZY_FARE_SYSTEM = _build_skfuzzy_fare_system()
+        sim = ctrl.ControlSystemSimulation(_SKFUZZY_FARE_SYSTEM)
+        sim.input["distance"] = float(max(0, min(50, trip_km)))
+        sim.input["hour"]     = float(max(0, min(24, hour)))
+        sim.input["demand"]   = _demand_level(hour, dow)
+        sim.input["weather"]  = _weather_level(is_rain, is_storm)
+        sim.compute()
+        return round(float(sim.output["surge"]), 3)
+    except Exception as e:
+        print(f"⚠️ skfuzzy_surge lỗi, fallback fuzzy thủ công: {e}")
+        return None
 
 def fuzzy_surge(hour: float, dow: int) -> float:
-    """Surge multiplier 1.0–1.8, Mamdani centroid defuzz."""
+    """Fallback manual fuzzy, nhưng vẫn lấy % từ tab Quản lý giá."""
+    max_mult = 1.0 + max(0.0, _pct("surge_max_pct", 80)) / 100
     morning  = tri(hour, 6.5, 8.0, 9.5)
     evening  = tri(hour, 16.5,18.0,20.0)
     night    = min(1.0, trap(hour,22,23,24,24)+trap(hour,0,0,1,2))
     weekend  = 0.25 if dow>=5 else 0.0
 
-    # Membership → output center pairs
     rules = [
-        (morning,   1.55),
-        (evening,   1.60),
-        (night*0.8, 1.25),
-        (weekend,   1.20),
-        (max(morning,evening)*weekend, 1.80),  # peak + weekend
+        (morning,   1.0 + _pct("surge_morning_pct", 55) / 100),
+        (evening,   1.0 + _pct("surge_evening_pct", 60) / 100),
+        (night*0.8, 1.0 + _pct("surge_night_pct", 25) / 100),
+        (weekend,   1.0 + _pct("surge_weekend_pct", 20) / 100),
+        (max(morning,evening)*weekend, max_mult),
     ]
     base_load = max(morning, evening, night*0.7)
-    rules.append((1.0 - base_load, 1.0))   # off-peak → no surge
+    rules.append((1.0 - base_load, 1.0))
 
     tw = sum(w for w,_ in rules)
     surge = sum(w*c for w,c in rules)/tw if tw else 1.0
-    return round(min(1.80, max(1.0, surge)), 3)
+    return round(min(max_mult, max(1.0, surge)), 3)
 
 def fuzzy_weather_fee(is_rain: bool, is_storm: bool) -> float:
-    """Returns additive fee multiplier 0–0.50.
+    """Returns additive fee multiplier from Dashboard pricing config.
 
     Không dùng random để giá preview và giá tạo chuyến không lệch nhau.
     """
-    if is_storm: return 0.50
-    if is_rain:  return 0.20
+    if is_storm:
+        return max(0.0, _pct("storm_pct", 50)) / 100
+    if is_rain:
+        rain_min = max(0.0, _pct("rain_min_pct", 10))
+        rain_max = max(rain_min, _pct("rain_max_pct", 30))
+        return ((rain_min + rain_max) / 2) / 100
     return 0.0
 
 def pickup_fee(dist_km: float) -> int:
@@ -294,12 +488,13 @@ def calc_fare(trip_km: float, vtype: str, driver_dist_km: float = 0,
     base_fare = r["open"] + extra_km * r["per_km"] + wait_min * r["wait_min"]
     base_fare = max(base_fare, r["min"])
 
-    # ── Surge (fuzzy) ──
-    surge_mult = fuzzy_surge(h, dow)
+    # ── Surge (skfuzzy nếu có, fallback fuzzy thủ công nếu chưa cài/thất bại) ──
+    sk_mult = skfuzzy_surge(trip_km, h, dow, is_rain=is_rain, is_storm=is_storm)
+    surge_mult = sk_mult if sk_mult is not None else fuzzy_surge(h, dow)
     surge_fee  = base_fare * (surge_mult - 1.0)
 
     # ── Night premium (already partially captured by surge, add small top-up) ──
-    night_fee  = base_fare * 0.12 if (h >= 22 or h < 5) else 0
+    night_fee  = base_fare * (_pct("night_pct", 12) / 100) if (h >= 22 or h < 5) else 0
 
     # ── Weather ──
     # Mặc định không mưa. Nếu cần demo mưa, truyền is_rain=True từ request/cấu hình.
@@ -349,6 +544,7 @@ def calc_fare(trip_km: float, vtype: str, driver_dist_km: float = 0,
         "voucher_info"  : voucher_info,
         "surge_mult"    : surge_mult,
         "surge_label"   : surge_label,
+        "pricing_engine": "skfuzzy" if sk_mult is not None else "manual_fuzzy",
         "is_rain"       : is_rain,
         "demand_low"    : surge_mult < 1.2,
     }
@@ -406,30 +602,22 @@ def _ensure_reviews_header():
 _ensure_reviews_header()
 
 def save_review(data):
-    ride_id  = data.get("ride_id", "")
+    ride_id  = data.get("ride_id","")
     ride_obj = rides.get(ride_id, {})
-
-    # Nếu file đã có dữ liệu nhưng cuối file chưa xuống dòng → tự thêm xuống dòng
-    if os.path.exists(REVIEWS_FILE) and os.path.getsize(REVIEWS_FILE) > 0:
-        with open(REVIEWS_FILE, "rb+") as f:
-            f.seek(-1, os.SEEK_END)
-            last_char = f.read(1)
-            if last_char not in [b"\n", b"\r"]:
-                f.write(b"\n")
-
-    with open(REVIEWS_FILE, "a", newline="", encoding="utf-8") as f:
+    row = {
+        "timestamp"  : datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "ride_id"    : ride_id,
+        "driver_name": data.get("driver_name",""),
+        "plate"      : data.get("plate",""),
+        "stars"      : data.get("stars", 0),
+        "tags"       : data.get("tags",""),
+        "comment"    : data.get("comment",""),
+        "fare"       : ride_obj.get("fare", data.get("fare","")),
+        "driver_earn": ride_obj.get("driver_earn_raw", data.get("driver_earn","")),
+    }
+    with open(REVIEWS_FILE,"a",newline='',encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=REVIEW_FIELDS)
-        w.writerow({
-            "timestamp"  : datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "ride_id"    : ride_id,
-            "driver_name": data.get("driver_name", ""),
-            "plate"      : data.get("plate", ""),
-            "stars"      : data.get("stars", 0),
-            "tags"       : data.get("tags", ""),
-            "comment"    : data.get("comment", ""),
-            "fare"       : ride_obj.get("fare", data.get("fare", "")),
-            "driver_earn": ride_obj.get("driver_earn_raw", data.get("driver_earn", "")),
-        })
+        w.writerow(row)
         f.flush()
         os.fsync(f.fileno())
 
@@ -573,32 +761,16 @@ def api_estimate():
         "eta"         : eta,
         "surge_mult"  : fi["surge_mult"],
         "surge_label" : fi["surge_label"],
+        "pricing_engine": fi.get("pricing_engine", "manual_fuzzy"),
         "is_rain"     : fi["is_rain"],
         "demand_low"  : fi["demand_low"],
     })
 
 # ════════════════════════════════════════════════
-#  Pricing config (editable via dashboard)
+#  Pricing config API (editable via dashboard + persistent JSON)
 # ════════════════════════════════════════════════
-PRICING_CONFIG = {
-    "bike": {"open": 13000, "per_km": 4500, "wait_min": 500,  "min": 13000},
-    "car4": {"open": 22000, "per_km": 9000, "wait_min": 800,  "min": 22000},
-    "car7": {"open": 32000, "per_km": 12000,"wait_min": 1000, "min": 32000},
-    "surge_morning_pct": 55,
-    "surge_evening_pct": 60,
-    "surge_night_pct":   25,
-    "surge_weekend_pct": 20,
-    "surge_max_pct":     80,
-    "rain_min_pct":      10,
-    "rain_max_pct":      30,
-    "storm_pct":         50,
-    "night_pct":         12,
-    "region_disc_pct":    7,
-    "driver_share_pct":  80,
-}
-
 def get_pricing():
-    return {**BASE, **PRICING_CONFIG}
+    return PRICING_CONFIG
 
 @app.route("/api/pricing", methods=["GET"])
 def api_get_pricing():
@@ -606,15 +778,33 @@ def api_get_pricing():
 
 @app.route("/api/pricing", methods=["POST"])
 def api_set_pricing():
-    global BASE, DRIVER_SHARE, REGION_DISC
+    global PRICING_CONFIG, _SKFUZZY_FARE_SYSTEM
     data = request.get_json(force=True)
-    for key, val in data.items():
-        if key in PRICING_CONFIG:
-            PRICING_CONFIG[key] = val
-        if key in ("bike","car4","car7") and isinstance(val, dict):
-            BASE[key].update(val)
-    DRIVER_SHARE  = PRICING_CONFIG["driver_share_pct"] / 100
-    REGION_DISC   = PRICING_CONFIG["region_disc_pct"]  / 100
+    new_cfg = _merge_pricing(PRICING_CONFIG, data)
+
+    # Ép kiểu số cho các ô giá xe để tránh lỗi khi dashboard gửi chuỗi.
+    for vtype in ("bike", "car4", "car7"):
+        for field in ("open", "per_km", "wait_min", "min"):
+            new_cfg[vtype][field] = int(float(new_cfg[vtype].get(field, DEFAULT_PRICING_CONFIG[vtype][field])))
+
+    for key in (
+        "surge_morning_pct", "surge_evening_pct", "surge_night_pct",
+        "surge_weekend_pct", "surge_max_pct", "rain_min_pct",
+        "rain_max_pct", "storm_pct", "night_pct",
+        "region_disc_pct", "driver_share_pct"
+    ):
+        new_cfg[key] = float(new_cfg.get(key, DEFAULT_PRICING_CONFIG[key]))
+
+    if new_cfg["rain_max_pct"] < new_cfg["rain_min_pct"]:
+        new_cfg["rain_max_pct"] = new_cfg["rain_min_pct"]
+
+    PRICING_CONFIG = new_cfg
+    _sync_pricing_globals()
+    save_pricing_config(PRICING_CONFIG)
+
+    # Cấu hình surge thay đổi thì cần build lại hệ fuzzy.
+    _SKFUZZY_FARE_SYSTEM = None
+
     return jsonify({"ok": True, "config": PRICING_CONFIG})
 
 # ════════════════════════════════════════════════
