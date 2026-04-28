@@ -195,6 +195,18 @@
     .clean-tip { background:transparent !important; border:none !important;
                  box-shadow:none !important; padding:0 !important; }
     .clean-tip::before { display:none !important; }
+
+    /* GoRide custom popup */
+    .goride-popup .leaflet-popup-content-wrapper {
+      border-radius:14px !important;
+      box-shadow:0 8px 30px rgba(15,23,42,.18) !important;
+      border:1px solid #e2e8f0 !important;
+      padding:0 !important;
+    }
+    .goride-popup .leaflet-popup-content {
+      margin:12px 14px !important;
+    }
+    .goride-popup .leaflet-popup-tip-container { display:none !important; }
   </style>
 </head>
 <body>
@@ -370,36 +382,154 @@ var map = L.map('map',{zoomControl:false,attributionControl:false})
 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
   {subdomains:'abcd',maxZoom:19}).addTo(map);
 
-/* ── Custom map markers ── */
-function svgPin(fill, label){
-  return '<div style="position:relative;text-align:center;width:36px">' +
-    '<svg width="36" height="44" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-      '<path d="M18 0C8.06 0 0 8.06 0 18c0 13.5 18 26 18 26S36 31.5 36 18C36 8.06 27.94 0 18 0z" fill="' + fill + '"/>' +
-      '<circle cx="18" cy="18" r="9" fill="white"/>' +
+/* ══ Professional map markers & popups ══ */
+
+/* ── Pill label tooltip (shared style) ── */
+var CSS_PILL = [
+  'background:#fff',
+  'border:none',
+  'border-radius:20px',
+  'padding:5px 10px 5px 8px',
+  'box-shadow:0 2px 12px rgba(0,0,0,.18)',
+  'font-family:Inter,sans-serif',
+  'font-size:11px',
+  'font-weight:700',
+  'white-space:nowrap',
+  'display:flex',
+  'align-items:center',
+  'gap:4px',
+  'pointer-events:none',
+].join(';');
+
+/* ── Pickup pin — green drop pin with pulsing halo ── */
+var pickupHTML =
+  '<div style="position:relative;width:44px;height:54px">' +
+    /* pulsing halo */
+    '<div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);' +
+         'width:20px;height:10px;border-radius:50%;' +
+         'background:rgba(5,150,105,.25);' +
+         'animation:haloPulse 1.6s ease-in-out infinite"></div>' +
+    /* pin body */
+    '<svg width="44" height="52" viewBox="0 0 44 52" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block">' +
+      '<filter id="ps"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#059669" flood-opacity=".35"/></filter>' +
+      '<path d="M22 1C11.5 1 3 9.5 3 20c0 15 19 31 19 31S41 35 41 20C41 9.5 32.5 1 22 1z" fill="#059669" filter="url(#ps)"/>' +
+      '<circle cx="22" cy="20" r="9" fill="white"/>' +
+      '<circle cx="22" cy="20" r="5" fill="#059669"/>' +
     '</svg>' +
-    '<div style="position:absolute;top:7px;left:0;width:36px;text-align:center;font-size:11px;font-weight:700;font-family:Inter,sans-serif;color:' + fill + '">' + label + '</div>' +
+  '</div>';
+
+/* ── Destination pin — blue sharp drop pin ── */
+var destHTML =
+  '<div style="position:relative;width:44px;height:54px">' +
+    '<div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);' +
+         'width:20px;height:10px;border-radius:50%;background:rgba(37,99,235,.2)"></div>' +
+    '<svg width="44" height="52" viewBox="0 0 44 52" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block">' +
+      '<filter id="ds"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#2563eb" flood-opacity=".35"/></filter>' +
+      '<path d="M22 1C11.5 1 3 9.5 3 20c0 15 19 31 19 31S41 35 41 20C41 9.5 32.5 1 22 1z" fill="#2563eb" filter="url(#ds)"/>' +
+      /* flag icon inside */
+      '<text x="22" y="26" text-anchor="middle" font-size="13" fill="white">🏁</text>' +
+    '</svg>' +
+  '</div>';
+
+/* ── Driver marker — animated scooter on white card ── */
+var driverHTML =
+  '<div style="position:relative">' +
+    /* vehicle card */
+    '<div style="background:#fff;border-radius:20px;padding:5px 8px;' +
+         'box-shadow:0 4px 16px rgba(0,0,0,.22);' +
+         'display:flex;align-items:center;gap:5px;' +
+         'border:2px solid #059669;' +
+         'font-family:Inter,sans-serif;font-size:11px;font-weight:700;color:#059669">' +
+      '<span id="driverEmoji" style="font-size:18px;line-height:1;display:block">🛵</span>' +
+      '<span id="driverLabel">Đang đến</span>' +
+    '</div>' +
+    /* tail arrow pointing down */
+    '<div style="width:0;height:0;border-left:7px solid transparent;' +
+         'border-right:7px solid transparent;border-top:8px solid #059669;' +
+         'margin:0 auto;margin-top:-1px"></div>' +
+  '</div>';
+
+/* ── Popup HTML builders ── */
+function pickupPopupHTML(){
+  return '<div style="font-family:Inter,sans-serif;min-width:140px">' +
+    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' +
+      '<span style="width:26px;height:26px;border-radius:50%;background:#ecfdf5;' +
+             'display:flex;align-items:center;justify-content:center;font-size:14px">📍</span>' +
+      '<span style="font-weight:700;font-size:13px;color:#0f172a">Điểm đón</span>' +
+    '</div>' +
+    '<div style="background:#f0fdf4;border-radius:8px;padding:7px 9px;' +
+               'font-size:11px;color:#475569;line-height:1.5">' +
+      'Tài xế đang trên đường đến đây.<br>' +
+      '<span style="color:#059669;font-weight:600">Vui lòng chờ tại điểm đón.</span>' +
+    '</div>' +
   '</div>';
 }
 
-var pickupIcon = L.divIcon({className:'', html:svgPin('#059669','A'), iconSize:[36,44], iconAnchor:[18,44]});
-var destIcon   = L.divIcon({className:'', html:svgPin('#2563eb','B'), iconSize:[36,44], iconAnchor:[18,44]});
-var driverIconHTML = '<div style="font-size:26px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.45));line-height:1" id="driverEmoji">🛵</div>';
-var driverIcon = L.divIcon({className:'',html:driverIconHTML,iconSize:[30,30],iconAnchor:[15,15]});
+function destPopupHTML(){
+  return '<div style="font-family:Inter,sans-serif;min-width:140px">' +
+    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' +
+      '<span style="width:26px;height:26px;border-radius:50%;background:#eff6ff;' +
+             'display:flex;align-items:center;justify-content:center;font-size:14px">🏁</span>' +
+      '<span style="font-weight:700;font-size:13px;color:#0f172a">Điểm đến</span>' +
+    '</div>' +
+    '<div style="background:#eff6ff;border-radius:8px;padding:7px 9px;font-size:11px;color:#475569">' +
+      'Điểm đến của hành trình.' +
+    '</div>' +
+  '</div>';
+}
 
-L.marker([PICKUP_LAT,PICKUP_LON],{icon:pickupIcon}).addTo(map)
-  .bindTooltip('📍 Điểm đón',{permanent:true,direction:'top',offset:[0,-10]});
-L.marker([DEST_LAT,DEST_LON],{icon:destIcon}).addTo(map)
-  .bindTooltip('🏁 Điểm đến',{permanent:false});
-var driverMarker = L.marker([DRIVER_LAT,DRIVER_LON],{icon:driverIcon}).addTo(map);
+/* ── Inject keyframes for halo pulse ── */
+(function(){
+  var s = document.createElement('style');
+  s.textContent = '@keyframes haloPulse{0%,100%{transform:translateX(-50%) scale(.8);opacity:.5}50%{transform:translateX(-50%) scale(1.4);opacity:1}}';
+  document.head.appendChild(s);
+})();
 
-/* Draw trip reference (dashed blue) */
-if(TRIP_ROUTE.length > 1)
-  L.polyline(TRIP_ROUTE,{color:'#2563eb',weight:3,opacity:.5,dashArray:'7,5'}).addTo(map);
+/* ── Create markers ── */
+var pickupIcon = L.divIcon({className:'', html:pickupHTML, iconSize:[44,54], iconAnchor:[22,54]});
+var destIcon   = L.divIcon({className:'', html:destHTML,   iconSize:[44,54], iconAnchor:[22,54]});
+var driverIcon = L.divIcon({className:'', html:driverHTML,  iconSize:[80,46], iconAnchor:[40,46]});
+
+var pickupMarker = L.marker([PICKUP_LAT,PICKUP_LON],{icon:pickupIcon, zIndexOffset:200}).addTo(map)
+  .bindPopup(pickupPopupHTML(), {
+    maxWidth:200, minWidth:160,
+    className:'goride-popup',
+    offset:[0,-54]
+  });
+
+var destMarker = L.marker([DEST_LAT,DEST_LON],{icon:destIcon, zIndexOffset:100}).addTo(map)
+  .bindPopup(destPopupHTML(), {
+    maxWidth:200, minWidth:160,
+    className:'goride-popup',
+    offset:[0,-54]
+  });
+
+/* ── Permanent pickup label ── */
+pickupMarker.bindTooltip(
+  '<div style="' + CSS_PILL + ';color:#059669">' +
+  '<span style="width:8px;height:8px;border-radius:50%;background:#059669;display:inline-block;animation:haloPulse 1.6s ease-in-out infinite"></span>' +
+  'Điểm đón</div>',
+  {permanent:true, direction:'top', offset:[0,-56], className:'clean-tip'}
+);
+
+var driverMarker = L.marker([DRIVER_LAT,DRIVER_LON],{icon:driverIcon, zIndexOffset:500}).addTo(map);
+
+/* Draw trip reference (dashed blue) — destination route */
+if(TRIP_ROUTE.length > 1){
+  /* Shadow line for depth */
+  L.polyline(TRIP_ROUTE,{color:'#1d4ed8',weight:6,opacity:.12}).addTo(map);
+  L.polyline(TRIP_ROUTE,{color:'#2563eb',weight:3,opacity:.55,dashArray:'10,7',
+    lineCap:'round',lineJoin:'round'}).addTo(map);
+}
 
 /* Draw approach route (solid green) — will trim as driver moves */
 var approachLine = null;
-if(APPROACH_ROUTE.length > 1)
-  approachLine = L.polyline(APPROACH_ROUTE,{color:'#059669',weight:4,opacity:.85}).addTo(map);
+if(APPROACH_ROUTE.length > 1){
+  /* Shadow */
+  L.polyline(APPROACH_ROUTE,{color:'#065f46',weight:6,opacity:.12}).addTo(map);
+  approachLine = L.polyline(APPROACH_ROUTE,{color:'#059669',weight:4,opacity:.9,
+    lineCap:'round',lineJoin:'round'}).addTo(map);
+}
 
 /* If no real approach route, build linear interpolation fallback */
 if(APPROACH_ROUTE.length <= 1){
@@ -478,11 +608,21 @@ map.on('dragstart', function(){
 
 /* ─── Arrived ─── */
 function onDriverArrived(){
+  /* Update driver marker card → "Đã tới!" */
+  var lbl = document.getElementById('driverLabel');
+  var emoji = document.getElementById('driverEmoji');
+  if(lbl){ lbl.textContent = 'Đã tới! 🎉'; lbl.style.color='#059669'; }
+  if(emoji){ emoji.textContent = '✅'; }
+
+  /* Show arrived toast */
   var toast = document.getElementById('arrivedToast');
-  toast.classList.add('show');
+  if(toast){ toast.classList.add('show'); }
+
+  /* Open popup on pickup marker */
+  pickupMarker.openPopup();
+
   map.setView([PICKUP_LAT,PICKUP_LON],17,{animate:true,duration:.8});
-  setTimeout(function(){ toast.classList.remove('show'); }, 4500);
-  /* Nếu chưa completed thì vẫn poll tiếp */
+  setTimeout(function(){ if(toast) toast.classList.remove('show'); }, 4500);
 }
 function showReview(){
   if(reviewShown) return;

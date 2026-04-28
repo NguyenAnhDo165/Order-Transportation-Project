@@ -316,19 +316,67 @@ def get_initials(name):
 # ════════════════════════════════════════════════
 #  Reviews
 # ════════════════════════════════════════════════
+# ════════════════════════════════════════════════
+#  Reviews  — columns: timestamp, ride_id, driver_name, plate,
+#             stars, tags, comment, fare, driver_earn
+# ════════════════════════════════════════════════
+REVIEW_FIELDS = ["timestamp","ride_id","driver_name","plate",
+                 "stars","tags","comment","fare","driver_earn"]
+
+def _ensure_reviews_header():
+    """Create or migrate reviews.csv so it always has correct columns."""
+    if not os.path.exists(REVIEWS_FILE):
+        with open(REVIEWS_FILE,"w",newline='',encoding="utf-8") as f:
+            csv.DictWriter(f, fieldnames=REVIEW_FIELDS).writeheader()
+        return
+    # Check existing header
+    with open(REVIEWS_FILE,newline='',encoding="utf-8") as f:
+        first = f.readline()
+    existing = [c.strip() for c in first.split(',')]
+    if existing == REVIEW_FIELDS:
+        return  # already correct
+    # Migrate: read all rows, rewrite with correct columns
+    rows = []
+    with open(REVIEWS_FILE,newline='',encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            rows.append(row)
+    with open(REVIEWS_FILE,"w",newline='',encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=REVIEW_FIELDS, extrasaction='ignore')
+        w.writeheader()
+        for row in rows:
+            # fill missing columns with empty string
+            clean = {k: row.get(k,"") for k in REVIEW_FIELDS}
+            w.writerow(clean)
+    print(f"✅ reviews.csv migrated → {REVIEW_FIELDS}")
+
+_ensure_reviews_header()
+
 def save_review(data):
-    ex = os.path.exists(REVIEWS_FILE)
+    ride_id  = data.get("ride_id","")
+    ride_obj = rides.get(ride_id, {})
     with open(REVIEWS_FILE,"a",newline='',encoding="utf-8") as f:
-        w=csv.DictWriter(f,fieldnames=["timestamp","ride_id","driver_name","plate","stars","tags","comment"])
-        if not ex: w.writeheader()
-        w.writerow({"timestamp":datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "ride_id":data.get("ride_id",""),"driver_name":data.get("driver_name",""),
-                    "plate":data.get("plate",""),"stars":data.get("stars",0),
-                    "tags":data.get("tags",""),"comment":data.get("comment","")})
+        w = csv.DictWriter(f, fieldnames=REVIEW_FIELDS)
+        w.writerow({
+            "timestamp"  : datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "ride_id"    : ride_id,
+            "driver_name": data.get("driver_name",""),
+            "plate"      : data.get("plate",""),
+            "stars"      : data.get("stars", 0),
+            "tags"       : data.get("tags",""),
+            "comment"    : data.get("comment",""),
+            "fare"       : ride_obj.get("fare", data.get("fare","")),
+            "driver_earn": ride_obj.get("driver_earn_raw", data.get("driver_earn","")),
+        })
 
 def read_reviews():
     if not os.path.exists(REVIEWS_FILE): return []
-    with open(REVIEWS_FILE,newline='',encoding="utf-8") as f: return list(csv.DictReader(f))
+    with open(REVIEWS_FILE,newline='',encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    # Fill any missing column so callers don't crash
+    for row in rows:
+        for field in REVIEW_FIELDS:
+            row.setdefault(field, "")
+    return rows
 
 # ════════════════════════════════════════════════
 #  Voucher API endpoint

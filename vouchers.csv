@@ -1,7 +1,7 @@
 code,discount_pct,max_discount,description,expires,active
 GORIDE20,20,30000,Giảm 20% tối đa 30k,2026-12-31,1
-TETHOLIDAY,25,50000,Mừng Tết 2026,2026-02-28,1
+TETHOLIDAY,25,50000,Mừng Tết 2026,2026-06-28,1
 SUMMER15,15,20000,Hè sôi động giảm 15%,2026-08-31,1
 NEWUSER,30,40000,Khách mới giảm 30%,2026-12-31,1
 RAINY10,10,15000,Mùa mưa giảm 10%,2026-11-30,1
-KHANGLUN,10,50000,Giảm cho chó Chí Khang, 2026-12-31,1
+
