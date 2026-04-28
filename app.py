@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 # ════════════════════════════════════════════════
 # Đọc token từ file .env để không lộ token trong source code.
 # Tạo file .env cùng cấp app.py và thêm dòng:
+# NGROK_AUTH_TOKEN=your_ngrok_token_here
 load_dotenv()
 NGROK_AUTH_TOKEN = os.getenv("NGROK_AUTH_TOKEN", "").strip()
 if NGROK_AUTH_TOKEN:
@@ -63,9 +64,7 @@ def new_ride(info: dict) -> str:
     rid = str(_uuid.uuid4())[:8]
     rides[rid] = {**info, "id": rid, "status": "waiting",
                   "created": datetime.now().strftime("%H:%M:%S")}
-    stats_store["total_rides"] += 1
-    stats_store["total_revenue"]  += info.get("fare_raw", 0)
-    stats_store["driver_earnings"] += info.get("driver_earn_raw", 0)
+    # Stats không lưu RAM nữa; /api/stats tính lại từ reviews.csv + rides hiện tại.
     return rid
 
 # ════════════════════════════════════════════════
@@ -74,6 +73,7 @@ def new_ride(info: dict) -> str:
 REVIEWS_FILE = "reviews.csv"
 DRIVERS_FILE = "drivers.csv"
 VOUCHERS_FILE = "vouchers.csv"
+TRIPS_FILE = "trips.csv"
 
 # ════════════════════════════════════════════════
 #  Vouchers  (load from CSV)
@@ -148,19 +148,63 @@ def load_drivers():
 
 DRIVERS = load_drivers()
 
+def _review_count_by_driver(name: str) -> int:
+    """Đếm số review đã lưu cho tài xế trong reviews.csv."""
+    if not name or not os.path.exists(REVIEWS_FILE):
+        return 0
+    count = 0
+    try:
+        with open(REVIEWS_FILE, newline='', encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                if row.get("driver_name", "") == name and row.get("stars", ""):
+                    count += 1
+    except Exception:
+        return 0
+    return count
+
 def update_driver_rating(name: str, new_star: float):
+    """Cập nhật rating theo weighted average, không dùng (old + new) / 2."""
+    if not name:
+        return
+
     rows=[]
     with open(DRIVERS_FILE,newline='',encoding="utf-8") as f:
-        rd = csv.DictReader(f); fn = rd.fieldnames
+        rd = csv.DictReader(f)
+        fn = list(rd.fieldnames or [])
+        if "rating_count" not in fn:
+            fn.append("rating_count")
+
+        total_reviews_after_save = _review_count_by_driver(name)
+        inferred_old_count = max(total_reviews_after_save - 1, 0)
+
         for row in rd:
-            if row["name"]==name:
-                row["rating"] = f"{(float(row['rating'])+new_star)/2:.2f}"
+            if row.get("name") == name:
+                old_rating = float(row.get("rating") or 0)
+                try:
+                    stored_count = int(float(row.get("rating_count") or 0))
+                except (TypeError, ValueError):
+                    stored_count = 0
+
+                old_count = stored_count if stored_count > 0 else max(inferred_old_count, 1)
+                new_count = old_count + 1
+                new_rating = (old_rating * old_count + float(new_star)) / new_count
+
+                row["rating"] = f"{new_rating:.2f}"
+                row["rating_count"] = str(new_count)
+            else:
+                row.setdefault("rating_count", row.get("rating_count", ""))
             rows.append(row)
+
     tmp = DRIVERS_FILE+".tmp"
     with open(tmp,"w",newline='',encoding="utf-8") as f:
-        w=csv.DictWriter(f,fieldnames=fn); w.writeheader(); w.writerows(rows)
+        w=csv.DictWriter(f,fieldnames=fn)
+        w.writeheader()
+        w.writerows(rows)
+        f.flush()
+        os.fsync(f.fileno())
     shutil.move(tmp,DRIVERS_FILE)
-    global DRIVERS; DRIVERS = load_drivers()
+    global DRIVERS
+    DRIVERS = load_drivers()
 
 # ════════════════════════════════════════════════
 #  Fuzzy Logic helpers
@@ -225,9 +269,12 @@ def fuzzy_surge(hour: float, dow: int) -> float:
     return round(min(1.80, max(1.0, surge)), 3)
 
 def fuzzy_weather_fee(is_rain: bool, is_storm: bool) -> float:
-    """Returns additive fee multiplier 0–0.50."""
+    """Returns additive fee multiplier 0–0.50.
+
+    Không dùng random để giá preview và giá tạo chuyến không lệch nhau.
+    """
     if is_storm: return 0.50
-    if is_rain:  return random.uniform(0.10, 0.30)   # simulate
+    if is_rain:  return 0.20
     return 0.0
 
 def pickup_fee(dist_km: float) -> int:
@@ -235,7 +282,8 @@ def pickup_fee(dist_km: float) -> int:
     return 0
 
 def calc_fare(trip_km: float, vtype: str, driver_dist_km: float = 0,
-              wait_min: float = 0, voucher_code: str = "") -> dict:
+              wait_min: float = 0, voucher_code: str = "",
+              is_rain: bool = False, is_storm: bool = False) -> dict:
     now  = datetime.now()
     h    = now.hour + now.minute/60
     dow  = now.weekday()
@@ -253,9 +301,9 @@ def calc_fare(trip_km: float, vtype: str, driver_dist_km: float = 0,
     # ── Night premium (already partially captured by surge, add small top-up) ──
     night_fee  = base_fare * 0.12 if (h >= 22 or h < 5) else 0
 
-    # ── Weather (random demo) ──
-    is_rain    = random.random() < 0.25   # 25% chance rain in demo
-    weather_fee= base_fare * fuzzy_weather_fee(is_rain, False)
+    # ── Weather ──
+    # Mặc định không mưa. Nếu cần demo mưa, truyền is_rain=True từ request/cấu hình.
+    weather_fee= base_fare * fuzzy_weather_fee(is_rain, is_storm)
 
     # ── Pickup fee disabled ──
     pick_fee   = 0
@@ -358,22 +406,30 @@ def _ensure_reviews_header():
 _ensure_reviews_header()
 
 def save_review(data):
-    ride_id  = data.get("ride_id","")
+    ride_id  = data.get("ride_id", "")
     ride_obj = rides.get(ride_id, {})
-    row = {
-        "timestamp"  : datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "ride_id"    : ride_id,
-        "driver_name": data.get("driver_name",""),
-        "plate"      : data.get("plate",""),
-        "stars"      : data.get("stars", 0),
-        "tags"       : data.get("tags",""),
-        "comment"    : data.get("comment",""),
-        "fare"       : ride_obj.get("fare", data.get("fare","")),
-        "driver_earn": ride_obj.get("driver_earn_raw", data.get("driver_earn","")),
-    }
-    with open(REVIEWS_FILE,"a",newline='',encoding="utf-8") as f:
+
+    # Nếu file đã có dữ liệu nhưng cuối file chưa xuống dòng → tự thêm xuống dòng
+    if os.path.exists(REVIEWS_FILE) and os.path.getsize(REVIEWS_FILE) > 0:
+        with open(REVIEWS_FILE, "rb+") as f:
+            f.seek(-1, os.SEEK_END)
+            last_char = f.read(1)
+            if last_char not in [b"\n", b"\r"]:
+                f.write(b"\n")
+
+    with open(REVIEWS_FILE, "a", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=REVIEW_FIELDS)
-        w.writerow(row)
+        w.writerow({
+            "timestamp"  : datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "ride_id"    : ride_id,
+            "driver_name": data.get("driver_name", ""),
+            "plate"      : data.get("plate", ""),
+            "stars"      : data.get("stars", 0),
+            "tags"       : data.get("tags", ""),
+            "comment"    : data.get("comment", ""),
+            "fare"       : ride_obj.get("fare", data.get("fare", "")),
+            "driver_earn": ride_obj.get("driver_earn_raw", data.get("driver_earn", "")),
+        })
         f.flush()
         os.fsync(f.fileno())
 
@@ -386,6 +442,84 @@ def read_reviews():
         for field in REVIEW_FIELDS:
             row.setdefault(field, "")
     return rows
+
+# ════════════════════════════════════════════════
+#  Trip history — persistent completed rides, not reset on local restart
+# ════════════════════════════════════════════════
+TRIP_FIELDS = [
+    "timestamp", "ride_id", "status", "driver_name", "plate", "vehicle_type",
+    "pickup", "destination", "road_km", "fare", "fare_raw", "driver_earn",
+    "payment_method", "voucher_code"
+]
+
+def _ensure_trips_header():
+    """Create/migrate trips.csv so completed rides are stored permanently."""
+    if not os.path.exists(TRIPS_FILE):
+        with open(TRIPS_FILE, "w", newline='', encoding="utf-8") as f:
+            csv.DictWriter(f, fieldnames=TRIP_FIELDS).writeheader()
+        return
+
+    with open(TRIPS_FILE, newline='', encoding="utf-8") as f:
+        first = f.readline()
+    existing = [c.strip() for c in first.split(',')]
+    if existing == TRIP_FIELDS:
+        return
+
+    rows = []
+    with open(TRIPS_FILE, newline='', encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            rows.append(row)
+    with open(TRIPS_FILE, "w", newline='', encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=TRIP_FIELDS, extrasaction='ignore')
+        w.writeheader()
+        for row in rows:
+            w.writerow({k: row.get(k, "") for k in TRIP_FIELDS})
+        f.flush()
+        os.fsync(f.fileno())
+    print(f"✅ trips.csv migrated → {TRIP_FIELDS}")
+
+_ensure_trips_header()
+
+def read_trips():
+    _ensure_trips_header()
+    with open(TRIPS_FILE, newline='', encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    for row in rows:
+        for field in TRIP_FIELDS:
+            row.setdefault(field, "")
+    return rows
+
+def save_trip_history(data, status="completed"):
+    """Persist one completed ride in trips.csv. Duplicate ride_id is ignored."""
+    ride_id = data.get("ride_id", "")
+    if ride_id:
+        for old in read_trips():
+            if old.get("ride_id") == ride_id:
+                return False
+
+    ride_obj = rides.get(ride_id, {})
+    row = {
+        "timestamp"     : datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "ride_id"       : ride_id,
+        "status"        : status,
+        "driver_name"   : data.get("driver_name") or ride_obj.get("driver_name", ""),
+        "plate"         : data.get("plate") or ride_obj.get("plate", ""),
+        "vehicle_type"  : data.get("vtype") or ride_obj.get("vtype", ""),
+        "pickup"        : data.get("pickup") or ride_obj.get("pickup", ""),
+        "destination"   : data.get("destination") or ride_obj.get("destination", ""),
+        "road_km"       : data.get("road_km") or ride_obj.get("road_km", ""),
+        "fare"          : ride_obj.get("fare", data.get("fare", "")),
+        "fare_raw"      : ride_obj.get("fare_raw", data.get("fare_raw", "")),
+        "driver_earn"   : ride_obj.get("driver_earn_raw", data.get("driver_earn", "")),
+        "payment_method": data.get("payment_method") or ride_obj.get("payment_method", ""),
+        "voucher_code"  : data.get("voucher_code") or ride_obj.get("voucher_code", ""),
+    }
+    with open(TRIPS_FILE, "a", newline='', encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=TRIP_FIELDS)
+        w.writerow(row)
+        f.flush()
+        os.fsync(f.fileno())
+    return True
 
 # ════════════════════════════════════════════════
 #  Voucher API endpoint
@@ -488,12 +622,12 @@ def api_set_pricing():
 # ════════════════════════════════════════════════
 @app.route("/api/revenue_chart")
 def api_revenue_chart():
-    reviews = read_reviews()
+    trips = read_trips()
     from collections import defaultdict
     daily   = defaultdict(lambda: {"revenue":0,"rides":0,"driver_earn":0})
     monthly = defaultdict(lambda: {"revenue":0,"rides":0,"driver_earn":0})
 
-    for r in reviews:
+    for r in trips:
         ts = r.get("timestamp","")
         try:
             fare = float(str(r.get("fare",0)).replace(",",""))
@@ -615,20 +749,54 @@ def dashboard(): return render_template("dashboard.html")
 def api_rides():
     return jsonify({"rides": list(rides.values())})
 
+def _money_to_float(value) -> float:
+    try:
+        return float(str(value or 0).replace(",", ""))
+    except (TypeError, ValueError):
+        return 0.0
+
+def compute_dashboard_stats():
+    """Tính stats từ trips.csv + rides hiện tại để restart local không mất số."""
+    reviews = read_reviews()
+    trips = read_trips()
+    total_revenue = sum(_money_to_float(r.get("fare")) for r in trips)
+    driver_earnings = sum(_money_to_float(r.get("driver_earn")) for r in trips)
+
+    persisted_ids = {r.get("ride_id") for r in trips if r.get("ride_id")}
+    active_count = 0
+    for ride_id, ride in rides.items():
+        if ride_id in persisted_ids:
+            continue
+        active_count += 1
+        total_revenue += _money_to_float(ride.get("fare"))
+        driver_earnings += _money_to_float(ride.get("driver_earn_raw"))
+
+    return {
+        "reviews": reviews,
+        "trips": trips,
+        "total_rides": len(trips) + active_count,
+        "total_revenue": int(total_revenue),
+        "driver_earnings": int(driver_earnings),
+    }
+
 @app.route("/api/stats")
 def api_stats():
-    reviews = read_reviews()
+    stats = compute_dashboard_stats()
+    reviews = stats["reviews"]
     stars   = [float(r["stars"]) for r in reviews if r.get("stars")]
     return jsonify({
-        "total_rides"    : stats_store["total_rides"],
+        "total_rides"    : stats["total_rides"],
         "total_reviews"  : len(reviews),
         "avg_stars"      : sum(stars)/len(stars) if stars else 0,
-        "total_revenue"  : stats_store["total_revenue"],
-        "driver_earnings": stats_store["driver_earnings"],
+        "total_revenue"  : stats["total_revenue"],
+        "driver_earnings": stats["driver_earnings"],
     })
 
 @app.route("/api/reviews")
 def api_reviews(): return jsonify({"reviews": read_reviews()})
+
+@app.route("/api/trips")
+def api_trips(): return jsonify({"trips": read_trips()})
 
 @app.route("/ride_status")
 def ride_status():
@@ -655,6 +823,7 @@ def complete_ride():
 @app.route("/submit_review", methods=["POST"])
 def submit_review():
     data = request.get_json(force=True)
+    save_trip_history(data, status="completed")
     save_review(data)
     stars = int(data.get("stars",0))
     if stars>0: update_driver_rating(data.get("driver_name",""), float(stars))
@@ -669,50 +838,77 @@ def submit_review():
 
 @app.route("/api/drivers")
 def api_drivers():
-    """Return all drivers with aggregated earnings from reviews."""
+    """Return all drivers with persistent earnings from trips.csv."""
     drivers = load_drivers()
-
-    # Build earnings map from reviews
+    trips = read_trips()
     reviews = read_reviews()
+
     earnings = {}
+    def bucket(name):
+        if name not in earnings:
+            earnings[name] = {
+                "driver_name": name,
+                "rating": 0,
+                "review_count": 0,
+                "trip_count": 0,
+                "total_revenue": 0,
+                "total_earn": 0,
+            }
+        return earnings[name]
+
+    # Money comes from trips.csv, so it survives every local restart.
+    for t in trips:
+        name = t.get("driver_name", "")
+        if not name:
+            continue
+        e = bucket(name)
+        e["trip_count"] += 1
+        e["total_revenue"] += _money_to_float(t.get("fare"))
+        e["total_earn"] += _money_to_float(t.get("driver_earn"))
+
+    # Add still-running rides from RAM, but skip IDs already saved in trips.csv.
+    saved_ids = {t.get("ride_id") for t in trips if t.get("ride_id")}
+    for ride_id, ride in rides.items():
+        if ride_id in saved_ids:
+            continue
+        name = ride.get("driver_name", "")
+        if not name:
+            continue
+        e = bucket(name)
+        e["trip_count"] += 1
+        e["total_revenue"] += _money_to_float(ride.get("fare"))
+        e["total_earn"] += _money_to_float(ride.get("driver_earn_raw"))
+
+    # Rating displayed in the income table comes from reviews.csv.
     for r in reviews:
-        name = r.get("driver_name","")
-        if not name: continue
-        if name not in earnings:
-            earnings[name] = {"driver_name":name,"rating":0,"trip_count":0,
-                               "total_revenue":0,"total_earn":0}
+        name = r.get("driver_name", "")
+        if not name:
+            continue
         try:
-            stars = float(r.get("stars",0))
-            # Approximate revenue: total_earn / 0.8
-            # We don't store per-review revenue so we estimate from known fare data
-            earnings[name]["trip_count"] += 1
-            earnings[name]["rating"] = (earnings[name]["rating"] * (earnings[name]["trip_count"]-1) + stars) / earnings[name]["trip_count"]
-        except: pass
+            stars = float(r.get("stars", 0))
+        except (TypeError, ValueError):
+            continue
+        if stars <= 0:
+            continue
+        e = bucket(name)
+        n = e["review_count"]
+        e["rating"] = (e["rating"] * n + stars) / (n + 1)
+        e["review_count"] = n + 1
 
-    # Merge driver earnings from rides dict
-    for ride in rides.values():
-        name = ride.get("driver_name","")
-        if not name: continue
-        if name not in earnings:
-            earnings[name] = {"driver_name":name,"rating":0,"trip_count":0,"total_revenue":0,"total_earn":0}
-        earnings[name]["total_revenue"] = earnings[name].get("total_revenue",0) + (ride.get("fare_raw") or ride.get("fare",0) or 0)
-        earnings[name]["total_earn"]    = earnings[name].get("total_earn",0)    + (ride.get("driver_earn_raw",0) or 0)
-
-    # Attach earnings to driver list
     total_driver_earnings = sum(e["total_earn"] for e in earnings.values())
     driver_list = []
     for d in drivers:
         e = earnings.get(d["name"], {})
         driver_list.append({**d,
-            "total_earn"   : e.get("total_earn", 0),
-            "total_revenue": e.get("total_revenue", 0),
-            "total_trips"  : e.get("trip_count", 0),
+            "total_earn"   : int(e.get("total_earn", 0)),
+            "total_revenue": int(e.get("total_revenue", 0)),
+            "total_trips"  : int(e.get("trip_count", 0)),
         })
 
     return jsonify({
         "drivers"              : driver_list,
         "earnings"             : earnings,
-        "total_driver_earnings": total_driver_earnings,
+        "total_driver_earnings": int(total_driver_earnings),
     })
 
 @app.route("/map-inner")
@@ -782,6 +978,10 @@ def index():
                 "driver_earn_raw": fi["driver_earn"],
                 "eta"          : eta,
                 "vtype"        : vtype,
+                "pickup"       : pickup,
+                "destination"  : destination,
+                "voucher_code" : voucher_code,
+                "payment_method": request.form.get("payment_method", ""),
             })
 
             d_info = {

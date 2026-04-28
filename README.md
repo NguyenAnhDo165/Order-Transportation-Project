@@ -1,37 +1,46 @@
-# 🚗 GoRide AI – Smart Ride-Hailing Simulation
+# 🚀 GoRide -- Order Transportation System
 
-A smart ride-hailing web application inspired by Grab, integrating AI (Fuzzy Logic), map routing, and real-time simulation.
+Ứng dụng mô phỏng hệ thống đặt xe (tương tự Grab/GoJek) sử dụng Flask +
+OSMnx.
 
-## 🌟 Features
-- 📍 Address search & routing (OSMnx + NetworkX)
-- 🤖 Smart driver matching (Fuzzy Logic)
-- 💰 Dynamic pricing (surge & discount)
-- 🚗 Vehicle simulation (bike, car, 7-seat)
-- 📡 Live tracking (driver follows real route)
-- ⭐ Rating system (saved to CSV)
-- 🌐 Public access via ngrok
+## 📦 Tính năng
 
-## 🧠 Tech Stack
-- Python (Flask)
-- OSMnx, NetworkX
-- Leaflet (JS)
-- Geopy (Nominatim)
+-   Đặt xe theo địa chỉ thực
+-   Tính giá thông minh (fuzzy logic)
+-   Lưu chuyến đi (trips.csv)
+-   Đánh giá tài xế (reviews.csv)
+-   Dashboard quản lý
 
-## ▶️ Run
-```bash
+## ⚙️ Cài đặt
+
+``` bash
+pip install -r requirements.txt
+```
+
+Tạo file `.env`:
+
+    NGROK_AUTH_TOKEN=your_token_here
+
+Chạy:
+
+``` bash
 python app.py
 ```
 
-## 📂 Structure
-Project Grab/
-│── app.py
-│── drivers.csv
-│── ratings.csv
-│── templates/
-│── static/
+## 💾 Dữ liệu
 
-## 👨‍💻 Author
-Đỗ Nguyên Anh
-Nguyễn Đức Duy
-Phan Bá Phú Sĩ
-Nguyễn Ngọc Bảo Uyên
+-   trips.csv: lưu chuyến đi
+-   reviews.csv: đánh giá
+-   drivers.csv: tài xế
+-   vouchers.csv: voucher
+
+## 🔒 Bảo mật
+
+Không commit `.env` lên GitHub.
+
+
+## 👨‍💻 Project dùng cho học tập được thực hiện bởi nhóm sinh viên Đại học Kinh Tế TP.HCM - UEH bao gồm các thành viên:
+- Đỗ Nguyên Anh
+- Nguyễn Đức Duy
+- Phan Bá Phú Sĩ
+- Nguyễn Ngọc Bảo Uyên
