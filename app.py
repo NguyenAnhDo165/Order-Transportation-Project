@@ -393,6 +393,139 @@ def check_voucher():
     return jsonify({"valid":False,"discount":0,"description":"Mã không hợp lệ hoặc hết hạn"})
 
 # ════════════════════════════════════════════════
+#  Fare estimate API  (used by index.html preview)
+# ════════════════════════════════════════════════
+@app.route("/api/estimate", methods=["POST"])
+def api_estimate():
+    """Return a server-side fare preview using the same calc_fare logic.
+    Accepts straight-line km + vtype + optional voucher_code."""
+    data         = request.get_json(force=True)
+    straight_km  = float(data.get("straight_km", 0))
+    vtype        = data.get("vtype", "bike")
+    voucher_code = data.get("voucher_code", "").strip().upper()
+
+    # Apply the same circuity factor used in the JS preview
+    def circuity(km):
+        if km < 2:  return 1.50
+        if km < 5:  return 1.38
+        if km < 10: return 1.28
+        return 1.22
+
+    road_km = straight_km * circuity(straight_km)
+    # driver_dist_km unknown at preview stage → use 0 (no pickup fee)
+    fi = calc_fare(road_km, vtype, driver_dist_km=0, wait_min=0, voucher_code=voucher_code)
+
+    eta = max(1, math.ceil(road_km / 25 * 60))
+
+    return jsonify({
+        "fare"        : fi["fare"],
+        "fare_raw"    : fi["fare_raw"],
+        "base_fare"   : fi["base_fare"],
+        "surge_fee"   : fi["surge_fee"],
+        "night_fee"   : fi["night_fee"],
+        "weather_fee" : fi["weather_fee"],
+        "region_disc" : fi["region_disc"],
+        "voucher_disc": fi["voucher_disc"],
+        "road_km"     : round(road_km, 1),
+        "eta"         : eta,
+        "surge_mult"  : fi["surge_mult"],
+        "surge_label" : fi["surge_label"],
+        "is_rain"     : fi["is_rain"],
+        "demand_low"  : fi["demand_low"],
+    })
+
+# ════════════════════════════════════════════════
+#  Pricing config (editable via dashboard)
+# ════════════════════════════════════════════════
+PRICING_CONFIG = {
+    "bike": {"open": 13000, "per_km": 4500, "wait_min": 500,  "min": 13000},
+    "car4": {"open": 22000, "per_km": 9000, "wait_min": 800,  "min": 22000},
+    "car7": {"open": 32000, "per_km": 12000,"wait_min": 1000, "min": 32000},
+    "surge_morning_pct": 55,
+    "surge_evening_pct": 60,
+    "surge_night_pct":   25,
+    "surge_weekend_pct": 20,
+    "surge_max_pct":     80,
+    "rain_min_pct":      10,
+    "rain_max_pct":      30,
+    "storm_pct":         50,
+    "night_pct":         12,
+    "region_disc_pct":    7,
+    "driver_share_pct":  80,
+}
+
+def get_pricing():
+    return {**BASE, **PRICING_CONFIG}
+
+@app.route("/api/pricing", methods=["GET"])
+def api_get_pricing():
+    return jsonify(PRICING_CONFIG)
+
+@app.route("/api/pricing", methods=["POST"])
+def api_set_pricing():
+    global BASE, DRIVER_SHARE, REGION_DISC
+    data = request.get_json(force=True)
+    for key, val in data.items():
+        if key in PRICING_CONFIG:
+            PRICING_CONFIG[key] = val
+        if key in ("bike","car4","car7") and isinstance(val, dict):
+            BASE[key].update(val)
+    DRIVER_SHARE  = PRICING_CONFIG["driver_share_pct"] / 100
+    REGION_DISC   = PRICING_CONFIG["region_disc_pct"]  / 100
+    return jsonify({"ok": True, "config": PRICING_CONFIG})
+
+# ════════════════════════════════════════════════
+#  Revenue chart data
+# ════════════════════════════════════════════════
+@app.route("/api/revenue_chart")
+def api_revenue_chart():
+    reviews = read_reviews()
+    from collections import defaultdict
+    daily   = defaultdict(lambda: {"revenue":0,"rides":0,"driver_earn":0})
+    monthly = defaultdict(lambda: {"revenue":0,"rides":0,"driver_earn":0})
+
+    for r in reviews:
+        ts = r.get("timestamp","")
+        try:
+            fare = float(str(r.get("fare",0)).replace(",",""))
+            earn = float(str(r.get("driver_earn",0)).replace(",",""))
+        except:
+            fare = earn = 0
+        if not ts: continue
+        try:
+            dt = datetime.strptime(ts[:10], "%Y-%m-%d")
+            daily[dt.strftime("%Y-%m-%d")]["revenue"] += fare
+            daily[dt.strftime("%Y-%m-%d")]["driver_earn"] += earn
+            daily[dt.strftime("%Y-%m-%d")]["rides"] += 1
+            monthly[dt.strftime("%Y-%m")]["revenue"] += fare
+            monthly[dt.strftime("%Y-%m")]["driver_earn"] += earn
+            monthly[dt.strftime("%Y-%m")]["rides"] += 1
+        except: pass
+
+    # Inject the key (date/month string) into each value dict so the JS can use d.date / d.month
+    daily_list   = [{"date": k, **v} for k, v in sorted(daily.items())]
+    monthly_list = [{"month": k, **v} for k, v in sorted(monthly.items())]
+    return jsonify({
+        "daily"  : daily_list,
+        "monthly": monthly_list,
+    })
+
+# ════════════════════════════════════════════════
+#  Voucher management
+# ════════════════════════════════════════════════
+@app.route("/api/vouchers", methods=["GET"])
+def api_get_vouchers():
+    rows = []
+    if os.path.exists(VOUCHERS_FILE):
+        with open(VOUCHERS_FILE,newline='',encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+    return jsonify({"vouchers": rows})
+
+@app.route("/api/vouchers", methods=["POST"])
+def api_set_vouchers():
+    return jsonify({"ok": True})
+
+# ════════════════════════════════════════════════
 #  Dashboard API
 # ════════════════════════════════════════════════
 @app.route("/dashboard")

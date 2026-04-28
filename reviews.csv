@@ -1,12 +1,4 @@
 timestamp,ride_id,driver_name,plate,stars,tags,comment,fare,driver_earn
-2026-04-27 17:20:20,,Hồ Thị Thắng,43B3 - 5801,5,😊 Thân thiện,,,
-2026-04-27 17:20:58,,Đặng Văn Trung,43K1 - 4718,5,,"Nói nhiều, hay",,
-2026-04-27 17:22:53,,Huỳnh Hữu Tuấn,41L8 - 4186,5,,Lái nhanh quá 94km 1p xong rồi,,
-2026-04-27 17:26:37,,Hoàng Quang Huy,61F3 - 2528,5,🧹 Xe sạch,,,
-2026-04-27 17:36:00,,Dương Ngọc Tuấn,72K6 - 3800,5,,,,
-2026-04-27 17:37:38,,Vũ Anh Quân,61X7 - 4102,5,"🚀 Đúng giờ, 🛡️ Lái an toàn, 😊 Thân thiện",,,
-2026-04-27 17:57:11,,Phạm Minh Minh,41G7 - 2524,5,"🔇 Yên tĩnh, 🚀 Đúng giờ",,,
-2026-04-28 11:37:24,,Lý Ngọc Bình,51K1 - 4800,5,,,,
-2026-04-28 11:39:27,,Võ Quang Khánh,59A1 - 2034,5,"😊 Thân thiện, 🛵 Lái an toàn",hello,,
-2026-04-28 14:50:17,,Ngô Đức Phú,51P4 - 1693,5,🧹 Xe sạch,,,
-2026-04-28 14:50:21,,Đặng Minh Đạt,43F7 - 4064,2,,,,
+2026-04-28 18:06:40,d7c7d138,Bùi Thị Việt,41K3 - 8188,4,📍 Đúng điểm,,65000,52000
+2026-04-28 18:17:04,14d508a4,Dương Văn Quân,43M1 - 4927,4,😊 Thân thiện,,75000,60000
+2026-04-28 18:23:12,254f8948,Ngô Ngọc Long,43A5 - 3994,4,,,44000,35000

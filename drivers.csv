@@ -11,7 +11,7 @@ id,name,lat,lon,rating,preference
 10,Lý Anh Nam,10.711303,106.67087,4.9,Im lặng
 11,Hoàng Quang Dũng,10.822582,106.653867,4.2,Im lặng
 12,Huỳnh Minh Trung,10.797808,106.619615,5.0,Im lặng
-13,Bùi Thị Việt,10.770895,106.706684,4.75,Trò chuyện
+13,Bùi Thị Việt,10.770895,106.706684,4.44,Trò chuyện
 14,Nguyễn Đức Long,10.790297,106.684538,4.1,Im lặng
 15,Vũ Đức Long,10.784767,106.749923,5.0,Trò chuyện
 16,Phạm Hữu Bình,10.846845,106.731351,3.9,Im lặng
@@ -90,7 +90,7 @@ id,name,lat,lon,rating,preference
 89,Huỳnh Hữu Khoa,10.812972,106.701657,4.7,Im lặng
 90,Trần Minh Cường,10.822941,106.674449,5.0,Trò chuyện
 91,Nguyễn Minh Minh,10.751802,106.704467,4.4,Trò chuyện
-92,Ngô Ngọc Long,10.77679,106.714265,4.9,Im lặng
+92,Ngô Ngọc Long,10.77679,106.714265,4.45,Im lặng
 93,Dương Minh Quân,10.827017,106.714358,3.9,Im lặng
 94,Huỳnh Hữu Vinh,10.742289,106.661909,4.9,Trò chuyện
 95,Phạm Ngọc Trí,10.825622,106.706016,4.7,Trò chuyện
@@ -235,7 +235,7 @@ id,name,lat,lon,rating,preference
 234,Phan Anh Cường,10.77513,106.617243,4.2,Trò chuyện
 235,Ngô Minh Nam,10.787339,106.640093,4.9,Trò chuyện
 236,Vũ Thị Hiếu,10.732262,106.692149,3.6,Trò chuyện
-237,Trần Thị Việt,10.848509,106.687441,3.7,Trò chuyện
+237,Trần Thị Việt,10.848509,106.687441,4.35,Trò chuyện
 238,Bùi Thị Phúc,10.761478,106.608236,3.7,Im lặng
 239,Bùi Quang Quân,10.710998,106.680658,4.5,Trò chuyện
 240,Bùi Hữu Huy,10.731696,106.645364,5.0,Trò chuyện
@@ -259,7 +259,7 @@ id,name,lat,lon,rating,preference
 258,Huỳnh Thị Nam,10.820167,106.678106,4.2,Im lặng
 259,Trần Minh Tùng,10.771683,106.67256,4.5,Im lặng
 260,Phan Minh Thịnh,10.719568,106.636108,4.0,Im lặng
-261,Lý Ngọc Bình,10.77512,106.692019,4.75,Trò chuyện
+261,Lý Ngọc Bình,10.77512,106.692019,4.38,Trò chuyện
 262,Ngô Đức Thịnh,10.769929,106.674768,3.6,Trò chuyện
 263,Trần Minh Long,10.725335,106.687462,3.8,Im lặng
 264,Vũ Hữu Dũng,10.786755,106.640004,5.0,Trò chuyện
@@ -367,7 +367,7 @@ id,name,lat,lon,rating,preference
 366,Đặng Đức Trí,10.717418,106.700584,3.9,Trò chuyện
 367,Lý Thị Khánh,10.739415,106.684662,4.5,Im lặng
 368,Phạm Văn Quân,10.743033,106.636095,4.1,Trò chuyện
-369,Dương Văn Quân,10.816936,106.74917,4.5,Im lặng
+369,Dương Văn Quân,10.816936,106.74917,4.25,Im lặng
 370,Huỳnh Ngọc Minh,10.767166,106.749049,4.2,Trò chuyện
 371,Vũ Đức Bình,10.73203,106.662416,3.7,Trò chuyện
 372,Dương Thị Hải,10.735651,106.625227,4.8,Im lặng
@@ -391,7 +391,7 @@ id,name,lat,lon,rating,preference
 390,Hoàng Quang Nghĩa,10.712392,106.605884,4.0,Trò chuyện
 391,Ngô Hữu Phú,10.842727,106.623312,3.7,Im lặng
 392,Đặng Quang Quân,10.751075,106.649129,4.7,Trò chuyện
-393,Trần Ngọc Huy,10.791466,106.701093,4.9,Trò chuyện
+393,Trần Ngọc Huy,10.791466,106.701093,4.95,Trò chuyện
 394,Ngô Anh Khánh,10.700529,106.705355,4.7,Trò chuyện
 395,Lê Hữu Cường,10.706984,106.609609,4.5,Trò chuyện
 396,Huỳnh Hữu Phúc,10.792493,106.663906,3.8,Trò chuyện
@@ -473,7 +473,7 @@ id,name,lat,lon,rating,preference
 472,Hoàng Quang Nghĩa,10.75503,106.652821,4.0,Im lặng
 473,Lý Quang Hải,10.733916,106.686056,4.0,Im lặng
 474,Bùi Anh Trung,10.802714,106.693322,3.9,Trò chuyện
-475,Ngô Quang Sơn,10.789369,106.666209,4.5,Trò chuyện
+475,Ngô Quang Sơn,10.789369,106.666209,4.75,Trò chuyện
 476,Đỗ Đức Phong,10.756195,106.676626,4.2,Im lặng
 477,Hồ Văn Phong,10.739249,106.68986,4.6,Trò chuyện
 478,Bùi Anh Khánh,10.704753,106.601798,4.4,Trò chuyện

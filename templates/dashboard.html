@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>GoRide — Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&family=Roboto+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -16,11 +16,10 @@
       --green:#059669;--green-bg:#ecfdf5;--green-mid:#a7f3d0;
       --amber:#b45309;--amber-bg:#fffbeb;
       --red:#dc2626;--red-bg:#fff1f2;
-      --purple:#7c3aed;--purple-bg:#f5f3ff;--purple-mid:#ddd6fe;
+      --purple:#7c3aed;--purple-bg:#f5f3ff;
       --sh:0 1px 4px rgba(15,23,42,.07);--sh2:0 4px 16px rgba(15,23,42,.09);
     }
     html,body{min-height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
-
     /* TOPBAR */
     .topbar{height:58px;background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:var(--sh)}
     .tb-l{display:flex;align-items:center;gap:11px}
@@ -30,19 +29,17 @@
     .tb-r{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sub)}
     .ldot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:blink 1.8s ease-in-out infinite}
     @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-
     /* TABS */
-    .tabs{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:0;position:sticky;top:58px;z-index:100}
-    .tab{padding:14px 20px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .18s;white-space:nowrap}
+    .tabs{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:0;position:sticky;top:58px;z-index:100;overflow-x:auto;scrollbar-width:none}
+    .tabs::-webkit-scrollbar{display:none}
+    .tab{padding:14px 18px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .18s;white-space:nowrap}
     .tab:hover{color:var(--sub)}
     .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-
     /* PANELS */
-    .panel{display:none;max-width:1280px;margin:0 auto;padding:22px 20px;flex-direction:column;gap:18px}
+    .panel{display:none;max-width:1300px;margin:0 auto;padding:22px 20px;flex-direction:column;gap:18px}
     .panel.active{display:flex}
-
     /* STATS */
-    .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:13px}
+    .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:13px}
     .sc{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:15px 17px;box-shadow:var(--sh)}
     .sc.blue{background:linear-gradient(135deg,#2563eb,#0891b2);border:none}
     .sc.green{background:linear-gradient(135deg,#059669,#0d9488);border:none}
@@ -51,18 +48,16 @@
     .sc .si{font-size:19px;margin-bottom:7px}
     .sc .sl{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:2px}
     .sc.blue .sl,.sc.green .sl,.sc.purple .sl,.sc.amber .sl{color:rgba(255,255,255,.6)}
-    .sc .sv{font-family:'Roboto Mono',monospace;font-size:24px;font-weight:700;color:var(--text);letter-spacing:-1px;line-height:1.1}
+    .sc .sv{font-family:'Roboto Mono',monospace;font-size:22px;font-weight:700;color:var(--text);letter-spacing:-1px;line-height:1.1}
     .sc.blue .sv,.sc.green .sv,.sc.purple .sv,.sc.amber .sv{color:#fff}
     .sc .ss{font-size:11px;color:var(--muted);margin-top:3px}
     .sc.blue .ss,.sc.green .ss,.sc.purple .ss,.sc.amber .ss{color:rgba(255,255,255,.55)}
-
     /* SECTION */
     .sec{background:var(--white);border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:var(--sh)}
     .sec-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
     .sec-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700}
     .sec-sub{font-size:11px;color:var(--muted);margin-top:1px}
     .sec-acts{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
-
     /* BUTTONS */
     .btn{padding:6px 13px;border:1px solid var(--border);border-radius:8px;background:var(--white);font-size:12px;font-weight:500;color:var(--sub);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px;font-family:'Inter',sans-serif}
     .btn:hover{background:var(--accent-light);border-color:var(--accent-mid);color:var(--accent)}
@@ -73,7 +68,6 @@
     .btn.accent{background:var(--accent);border-color:var(--accent);color:#fff}
     .btn.accent:hover{background:var(--accent-dk)}
     .btn:disabled{opacity:.4;cursor:not-allowed}
-
     /* TABLE */
     .tw{overflow-x:auto}
     table{width:100%;border-collapse:collapse}
@@ -92,18 +86,7 @@
     .pill.completed{background:var(--green-bg);color:var(--green);border:1px solid var(--green-mid)}
     .tag{display:inline-block;padding:2px 6px;background:var(--accent-light);color:var(--accent);border-radius:20px;font-size:10px;font-weight:600;margin:1px}
     .stars{color:#d97706;font-weight:700;letter-spacing:1px;font-size:13px}
-    .empty-td{text-align:center;color:var(--muted);padding:32px !important;font-size:13px}
-
-    /* FARE DETAIL EXPAND */
-    .expand-row td{padding:0 !important;background:#f8fafc}
-    .fare-detail{padding:12px 18px;display:flex;flex-wrap:wrap;gap:8px 24px;font-size:12px}
-    .fd-item{display:flex;flex-direction:column;gap:1px;min-width:100px}
-    .fd-label{color:var(--muted);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em}
-    .fd-val{font-family:'Roboto Mono',monospace;font-size:12px;font-weight:700;color:var(--text)}
-    .fd-val.green{color:var(--green)}
-    .fd-val.red{color:var(--red)}
-    .fd-val.amber{color:var(--amber)}
-
+    .empty-td{text-align:center;color:var(--muted);padding:32px!important;font-size:13px}
     /* PAGINATION */
     .tf{padding:11px 15px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);flex-wrap:wrap;gap:8px}
     .tf-info{font-size:12px;color:var(--muted)}
@@ -111,26 +94,38 @@
     .pg-btn{padding:5px 10px;border:1px solid var(--border);border-radius:7px;background:var(--white);font-size:12px;font-weight:500;color:var(--sub);cursor:pointer;transition:all .15s}
     .pg-btn:hover{background:var(--accent-light);border-color:var(--accent-mid);color:var(--accent)}
     .pg-btn:disabled{opacity:.4;cursor:not-allowed}
-
-    /* DRIVER CARD GRID */
-    .driver-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;padding:16px}
-    .dcard{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:10px}
-    .dcard-head{display:flex;align-items:center;gap:12px}
-    .dav{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#dbeafe,#bfdbfe);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:800;color:var(--accent);flex-shrink:0}
-    .dcard-name{font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;color:var(--text)}
+    /* DRIVER GRID */
+    .driver-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;padding:16px}
+    .dcard{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px 15px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:9px}
+    .dcard-head{display:flex;align-items:center;gap:11px}
+    .dav{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#dbeafe,#bfdbfe);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:800;color:var(--accent);flex-shrink:0}
+    .dcard-name{font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--text)}
     .dcard-pref{font-size:11px;color:var(--muted)}
-    .dcard-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-    .dstat{background:#f8fafc;border-radius:9px;padding:8px 10px}
-    .dstat-label{font-size:10px;color:var(--muted);font-weight:500;margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em}
-    .dstat-val{font-family:'Roboto Mono',monospace;font-size:14px;font-weight:700;color:var(--text)}
+    .dcard-stats{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+    .dstat{background:#f8fafc;border-radius:9px;padding:7px 9px}
+    .dstat-label{font-size:10px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:1px}
+    .dstat-val{font-family:'Roboto Mono',monospace;font-size:13px;font-weight:700;color:var(--text)}
     .dstat-val.green{color:var(--green)}
     .dstat-val.amber{color:var(--amber)}
-    .dcard-lat{font-family:'Roboto Mono',monospace;font-size:10px;color:var(--muted)}
-
     /* SEARCH */
-    .search-box{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:8px}
-    .search-inp{flex:1;height:36px;padding:0 12px;border:1.5px solid var(--border);border-radius:9px;font-family:'Inter',sans-serif;font-size:13px;outline:none;background:var(--bg);color:var(--text);transition:border-color .18s}
+    .search-box{padding:11px 16px;border-bottom:1px solid var(--border);display:flex;gap:8px}
+    .search-inp{flex:1;height:34px;padding:0 12px;border:1.5px solid var(--border);border-radius:9px;font-family:'Inter',sans-serif;font-size:13px;outline:none;background:var(--bg);color:var(--text);transition:border-color .18s}
     .search-inp:focus{border-color:var(--accent);background:var(--white)}
+    /* FORM CONTROLS */
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;padding:18px}
+    .form-group{display:flex;flex-direction:column;gap:5px}
+    .form-label{font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.06em}
+    .form-input{height:38px;padding:0 12px;border:1.5px solid var(--border);border-radius:9px;font-family:'Roboto Mono',monospace;font-size:13px;font-weight:600;color:var(--text);outline:none;background:var(--white);transition:border-color .18s}
+    .form-input:focus{border-color:var(--accent)}
+    .form-hint{font-size:10px;color:var(--muted)}
+    /* CHART */
+    .chart-wrap{padding:18px;position:relative;height:260px}
+    /* MODAL OVERLAY */
+    .modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(4px);z-index:500;display:none;align-items:center;justify-content:center}
+    .modal-bg.show{display:flex}
+    .modal{background:var(--white);border-radius:18px;padding:24px;width:min(480px,95vw);box-shadow:0 20px 60px rgba(15,23,42,.2)}
+    .modal-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:800;margin-bottom:16px}
+    .modal-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
   </style>
 </head>
 <body>
@@ -144,10 +139,11 @@
   <div class="tb-r"><div class="ldot"></div>Live · tự cập nhật</div>
 </div>
 
-<!-- TABS -->
 <div class="tabs">
   <div class="tab active" onclick="switchTab('rides',this)">🛵 Chuyến đi</div>
-  <div class="tab" onclick="switchTab('drivers',this)">👤 Quản lý tài xế</div>
+  <div class="tab" onclick="switchTab('revenue',this)">📈 Doanh thu</div>
+  <div class="tab" onclick="switchTab('pricing',this)">⚙️ Quản lý giá</div>
+  <div class="tab" onclick="switchTab('drivers',this)">👤 Tài xế</div>
   <div class="tab" onclick="switchTab('reviews',this)">⭐ Đánh giá</div>
 </div>
 
@@ -156,64 +152,147 @@
   <div class="stat-grid">
     <div class="sc blue"><div class="si">🛵</div><div class="sl">Tổng cuốc xe</div><div class="sv" id="sTotalRides">—</div><div class="ss">kể từ khởi động</div></div>
     <div class="sc green"><div class="si">💰</div><div class="sl">Doanh thu</div><div class="sv" id="sRevenue">—</div><div class="ss">tổng tất cả chuyến</div></div>
-    <div class="sc purple"><div class="si">🧑‍✈️</div><div class="sl">Tài xế nhận (80%)</div><div class="sv" id="sEarnings">—</div><div class="ss">tổng driver earnings</div></div>
+    <div class="sc purple"><div class="si">🧑‍✈️</div><div class="sl">Driver nhận (80%)</div><div class="sv" id="sEarnings">—</div><div class="ss">tổng driver earnings</div></div>
     <div class="sc amber"><div class="si">⭐</div><div class="sl">Đánh giá TB</div><div class="sv" id="sAvgStars">—</div><div class="ss" id="sTotalReviews">0 reviews</div></div>
   </div>
-
   <div class="sec">
     <div class="sec-head">
       <div><div class="sec-title">🎮 Tất cả chuyến đi</div><div class="sec-sub" id="ridesSubtitle">Đang tải...</div></div>
       <div class="sec-acts"><button class="btn" onclick="loadAll()">🔄 Làm mới</button></div>
     </div>
-    <div class="tw">
-      <table>
-        <thead><tr>
-          <th>ID</th><th>Giờ</th><th>Tài xế</th><th>Biển số</th>
-          <th>Loại xe</th><th>Km</th><th>Giá KH</th><th>Driver nhận</th>
-          <th>ETA</th><th>Trạng thái</th><th>Hành động</th>
-        </tr></thead>
-        <tbody id="ridesBody"><tr><td colspan="11" class="empty-td">Đang tải...</td></tr></tbody>
-      </table>
+    <div class="tw"><table>
+      <thead><tr>
+        <th>ID</th><th>Giờ</th><th>Tài xế</th><th>Biển số</th><th>Loại xe</th>
+        <th>Km</th><th>Giá KH</th><th>Driver nhận</th><th>ETA</th><th>Trạng thái</th><th>Hành động</th>
+      </tr></thead>
+      <tbody id="ridesBody"><tr><td colspan="11" class="empty-td">Đang tải...</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ═══ TAB: REVENUE ═══ -->
+<div class="panel" id="tab-revenue">
+  <div class="stat-grid">
+    <div class="sc blue"><div class="si">💰</div><div class="sl">Tổng doanh thu</div><div class="sv" id="rTotalRev">—</div><div class="ss">tất cả thời gian</div></div>
+    <div class="sc green"><div class="si">🧑‍✈️</div><div class="sl">Tổng driver nhận</div><div class="sv" id="rTotalEarn">—</div><div class="ss">80% doanh thu</div></div>
+    <div class="sc amber"><div class="si">🏢</div><div class="sl">Platform giữ</div><div class="sv" id="rPlatform">—</div><div class="ss">20% doanh thu</div></div>
+    <div class="sc purple"><div class="si">📊</div><div class="sl">TB / chuyến</div><div class="sv" id="rAvgFare">—</div><div class="ss">doanh thu trung bình</div></div>
+  </div>
+
+  <!-- Chart toggle -->
+  <div class="sec">
+    <div class="sec-head">
+      <div><div class="sec-title">📈 Biểu đồ doanh thu</div><div class="sec-sub">Theo ngày / tháng</div></div>
+      <div class="sec-acts">
+        <button class="btn accent" id="btnDay" onclick="switchChart('daily')">Theo ngày</button>
+        <button class="btn" id="btnMonth" onclick="switchChart('monthly')">Theo tháng</button>
+        <button class="btn" onclick="loadRevenue()">🔄</button>
+      </div>
     </div>
+    <div class="chart-wrap"><canvas id="revenueChart"></canvas></div>
+  </div>
+
+  <!-- Revenue table -->
+  <div class="sec">
+    <div class="sec-head">
+      <div><div class="sec-title">📋 Chi tiết doanh thu theo ngày</div></div>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Ngày</th><th>Số chuyến</th><th>Doanh thu</th><th>Driver nhận</th><th>Platform</th></tr></thead>
+      <tbody id="revenueBody"><tr><td colspan="5" class="empty-td">Đang tải...</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ═══ TAB: PRICING ═══ -->
+<div class="panel" id="tab-pricing">
+  <!-- Base pricing -->
+  <div class="sec">
+    <div class="sec-head">
+      <div><div class="sec-title">🚗 Giá cơ bản theo loại xe</div><div class="sec-sub">Giá mở cửa bao gồm 2km đầu</div></div>
+      <div class="sec-acts"><button class="btn green" onclick="savePricing()">💾 Lưu thay đổi</button></div>
+    </div>
+    <div class="form-grid">
+      <div style="grid-column:1/-1;font-size:12px;font-weight:600;color:var(--accent);padding:0 0 4px">🛵 Xe máy</div>
+      <div class="form-group"><div class="form-label">Giá mở cửa (₫)</div><input class="form-input" id="p_bike_open" type="number" step="1000"/><div class="form-hint">Bao gồm 2km đầu</div></div>
+      <div class="form-group"><div class="form-label">Giá/km thêm (₫)</div><input class="form-input" id="p_bike_km" type="number" step="500"/></div>
+      <div class="form-group"><div class="form-label">Giá chờ/phút (₫)</div><input class="form-input" id="p_bike_wait" type="number" step="100"/></div>
+      <div class="form-group"><div class="form-label">Giá tối thiểu (₫)</div><input class="form-input" id="p_bike_min" type="number" step="1000"/></div>
+
+      <div style="grid-column:1/-1;font-size:12px;font-weight:600;color:var(--accent);padding:8px 0 4px">🚗 Ô tô 4 chỗ</div>
+      <div class="form-group"><div class="form-label">Giá mở cửa (₫)</div><input class="form-input" id="p_car4_open" type="number" step="1000"/></div>
+      <div class="form-group"><div class="form-label">Giá/km thêm (₫)</div><input class="form-input" id="p_car4_km" type="number" step="500"/></div>
+      <div class="form-group"><div class="form-label">Giá chờ/phút (₫)</div><input class="form-input" id="p_car4_wait" type="number" step="100"/></div>
+      <div class="form-group"><div class="form-label">Giá tối thiểu (₫)</div><input class="form-input" id="p_car4_min" type="number" step="1000"/></div>
+
+      <div style="grid-column:1/-1;font-size:12px;font-weight:600;color:var(--accent);padding:8px 0 4px">🚐 Ô tô 7 chỗ</div>
+      <div class="form-group"><div class="form-label">Giá mở cửa (₫)</div><input class="form-input" id="p_car7_open" type="number" step="1000"/></div>
+      <div class="form-group"><div class="form-label">Giá/km thêm (₫)</div><input class="form-input" id="p_car7_km" type="number" step="500"/></div>
+      <div class="form-group"><div class="form-label">Giá chờ/phút (₫)</div><input class="form-input" id="p_car7_wait" type="number" step="100"/></div>
+      <div class="form-group"><div class="form-label">Giá tối thiểu (₫)</div><input class="form-input" id="p_car7_min" type="number" step="1000"/></div>
+    </div>
+  </div>
+
+  <!-- Surcharge -->
+  <div class="sec">
+    <div class="sec-head">
+      <div><div class="sec-title">⚡ Phụ phí & Hệ số nhân (Surge)</div><div class="sec-sub">Áp dụng theo giờ, thời tiết, vị trí</div></div>
+      <div class="sec-acts"><button class="btn green" onclick="savePricing()">💾 Lưu</button></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><div class="form-label">🌅 Sáng cao điểm (%)</div><input class="form-input" id="p_surge_morning" type="number" step="5" min="0" max="100"/><div class="form-hint">7h – 9h sáng</div></div>
+      <div class="form-group"><div class="form-label">🌆 Chiều cao điểm (%)</div><input class="form-input" id="p_surge_evening" type="number" step="5" min="0" max="100"/><div class="form-hint">17h – 19h chiều</div></div>
+      <div class="form-group"><div class="form-label">🌙 Đêm khuya (%)</div><input class="form-input" id="p_surge_night" type="number" step="5" min="0" max="100"/><div class="form-hint">22h – 5h sáng</div></div>
+      <div class="form-group"><div class="form-label">📅 Cuối tuần (%)</div><input class="form-input" id="p_surge_weekend" type="number" step="5" min="0" max="100"/></div>
+      <div class="form-group"><div class="form-label">🔴 Surge tối đa (%)</div><input class="form-input" id="p_surge_max" type="number" step="5" min="0" max="200"/><div class="form-hint">Không vượt quá mức này</div></div>
+      <div class="form-group"><div class="form-label">🌧 Mưa tối thiểu (%)</div><input class="form-input" id="p_rain_min" type="number" step="5" min="0"/></div>
+      <div class="form-group"><div class="form-label">🌧 Mưa tối đa (%)</div><input class="form-input" id="p_rain_max" type="number" step="5" min="0"/></div>
+      <div class="form-group"><div class="form-label">⛈ Bão/lũ (%)</div><input class="form-input" id="p_storm" type="number" step="5" min="0"/></div>
+      <div class="form-group"><div class="form-label">🌏 Giảm giá khu vực (%)</div><input class="form-input" id="p_region_disc" type="number" step="1" min="0" max="30"/><div class="form-hint">Giảm cho khu vực tỉnh</div></div>
+      <div class="form-group"><div class="form-label">🧑‍✈️ Driver được nhận (%)</div><input class="form-input" id="p_driver_share" type="number" step="5" min="50" max="95"/><div class="form-hint">Mặc định 80%</div></div>
+    </div>
+  </div>
+
+  <!-- Voucher management -->
+  <div class="sec">
+    <div class="sec-head">
+      <div><div class="sec-title">🎟 Quản lý Voucher</div><div class="sec-sub" id="voucherSubtitle">Đang tải...</div></div>
+      <div class="sec-acts">
+        <button class="btn accent" onclick="openAddVoucher()">+ Thêm voucher</button>
+        <button class="btn" onclick="loadVouchers()">🔄</button>
+      </div>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Mã</th><th>Giảm (%)</th><th>Giảm tối đa</th><th>Mô tả</th><th>Hết hạn</th><th>Trạng thái</th><th>Xóa</th></tr></thead>
+      <tbody id="voucherBody"><tr><td colspan="7" class="empty-td">Đang tải...</td></tr></tbody>
+    </table></div>
   </div>
 </div>
 
 <!-- ═══ TAB: DRIVERS ═══ -->
 <div class="panel" id="tab-drivers">
   <div class="stat-grid">
-    <div class="sc blue"><div class="si">👥</div><div class="sl">Tổng tài xế</div><div class="sv" id="dTotalDrivers">—</div><div class="ss">trong hệ thống</div></div>
-    <div class="sc green"><div class="si">⭐</div><div class="sl">Rating trung bình</div><div class="sv" id="dAvgRating">—</div><div class="ss">toàn đội ngũ</div></div>
-    <div class="sc purple"><div class="si">💸</div><div class="sl">Tổng chi cho driver</div><div class="sv" id="dTotalEarn">—</div><div class="ss">từ tất cả chuyến</div></div>
-    <div class="sc amber"><div class="si">🏆</div><div class="sl">Driver xuất sắc</div><div class="sv" id="dTopDriver">—</div><div class="ss">rating cao nhất</div></div>
+    <div class="sc blue"><div class="si">👥</div><div class="sl">Tổng tài xế</div><div class="sv" id="dTotal">—</div><div class="ss">trong hệ thống</div></div>
+    <div class="sc green"><div class="si">⭐</div><div class="sl">Rating trung bình</div><div class="sv" id="dAvgR">—</div><div class="ss">toàn đội</div></div>
+    <div class="sc purple"><div class="si">💸</div><div class="sl">Tổng chi driver</div><div class="sv" id="dTotalEarn">—</div><div class="ss">từ tất cả chuyến</div></div>
+    <div class="sc amber"><div class="si">🏆</div><div class="sl">Driver xuất sắc</div><div class="sv" id="dTop">—</div><div class="ss">rating cao nhất</div></div>
   </div>
-
   <div class="sec">
     <div class="sec-head">
       <div><div class="sec-title">👤 Danh sách tài xế</div><div class="sec-sub" id="driverSubtitle">Đang tải...</div></div>
-      <div class="sec-acts"><button class="btn" onclick="loadDrivers()">🔄 Làm mới</button></div>
+      <div class="sec-acts"><button class="btn" onclick="loadDrivers()">🔄</button></div>
     </div>
     <div class="search-box">
-      <input class="search-inp" id="driverSearch" type="text" placeholder="🔍 Tìm theo tên tài xế..." oninput="filterDriverCards()"/>
+      <input class="search-inp" id="dSearch" type="text" placeholder="🔍 Tìm theo tên..." oninput="filterDrivers()"/>
     </div>
-    <div class="driver-grid" id="driverGrid">
-      <div style="padding:32px;text-align:center;color:var(--muted)">Đang tải...</div>
-    </div>
+    <div class="driver-grid" id="driverGrid"><div style="padding:32px;text-align:center;color:var(--muted)">Đang tải...</div></div>
   </div>
-
-  <!-- Driver earnings table -->
   <div class="sec">
-    <div class="sec-head">
-      <div><div class="sec-title">💰 Bảng thu nhập tài xế</div><div class="sec-sub">Tổng hợp từ tất cả chuyến đã hoàn thành</div></div>
-    </div>
-    <div class="tw">
-      <table>
-        <thead><tr>
-          <th>Tài xế</th><th>Rating hiện tại</th><th>Số chuyến đã đánh giá</th>
-          <th>Tổng doanh thu KH trả</th><th>Tài xế nhận (80%)</th><th>Platform giữ (20%)</th>
-        </tr></thead>
-        <tbody id="earningsBody"><tr><td colspan="6" class="empty-td">Đang tải...</td></tr></tbody>
-      </table>
-    </div>
+    <div class="sec-head"><div><div class="sec-title">💰 Bảng thu nhập tài xế</div><div class="sec-sub">Tổng hợp từ tất cả chuyến</div></div></div>
+    <div class="tw"><table>
+      <thead><tr><th>Tài xế</th><th>Rating</th><th>Số chuyến</th><th>Doanh thu KH</th><th>Driver nhận (80%)</th><th>Platform (20%)</th></tr></thead>
+      <tbody id="earningsBody"><tr><td colspan="6" class="empty-td">Đang tải...</td></tr></tbody>
+    </table></div>
   </div>
 </div>
 
@@ -222,14 +301,12 @@
   <div class="sec">
     <div class="sec-head">
       <div><div class="sec-title">⭐ Lịch sử đánh giá</div><div class="sec-sub" id="reviewSubtitle">Đang tải...</div></div>
-      <div class="sec-acts"><button class="btn" onclick="loadReviews()">🔄 Làm mới</button></div>
+      <div class="sec-acts"><button class="btn" onclick="loadReviews()">🔄</button></div>
     </div>
-    <div class="tw">
-      <table>
-        <thead><tr><th>#</th><th>Thời gian</th><th>Tài xế</th><th>Biển số</th><th>Sao</th><th>Tags</th><th>Nhận xét</th></tr></thead>
-        <tbody id="reviewBody"><tr><td colspan="7" class="empty-td">Đang tải...</td></tr></tbody>
-      </table>
-    </div>
+    <div class="tw"><table>
+      <thead><tr><th>#</th><th>Thời gian</th><th>Tài xế</th><th>Biển số</th><th>Sao</th><th>Giá chuyến</th><th>Tags</th><th>Nhận xét</th></tr></thead>
+      <tbody id="reviewBody"><tr><td colspan="8" class="empty-td">Đang tải...</td></tr></tbody>
+    </table></div>
     <div class="tf">
       <div class="tf-info" id="pageInfo"></div>
       <div class="pg">
@@ -240,20 +317,41 @@
   </div>
 </div>
 
+<!-- ADD VOUCHER MODAL -->
+<div class="modal-bg" id="voucherModal">
+  <div class="modal">
+    <div class="modal-title">➕ Thêm Voucher mới</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="form-group"><div class="form-label">Mã voucher</div><input class="form-input" id="mv_code" placeholder="VD: SALE50" style="text-transform:uppercase"/></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><div class="form-label">Giảm (%)</div><input class="form-input" id="mv_pct" type="number" min="1" max="100" value="10"/></div>
+        <div class="form-group"><div class="form-label">Giảm tối đa (₫)</div><input class="form-input" id="mv_max" type="number" step="1000" value="50000"/></div>
+      </div>
+      <div class="form-group"><div class="form-label">Mô tả</div><input class="form-input" id="mv_desc" placeholder="Ưu đãi dịp lễ..."/></div>
+      <div class="form-group"><div class="form-label">Ngày hết hạn</div><input class="form-input" id="mv_exp" type="date"/></div>
+    </div>
+    <div class="modal-acts">
+      <button class="btn" onclick="closeAddVoucher()">Hủy</button>
+      <button class="btn accent" onclick="addVoucher()">✓ Thêm voucher</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ── Tabs ── */
-function switchTab(id, el){
+function switchTab(id,el){
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
-  document.getElementById('tab-'+id).classList.add('active');
-  el.classList.add('active');
-  if(id==='drivers') loadDrivers();
-  if(id==='reviews') loadReviews();
+  document.getElementById('tab-'+id).classList.add('active');el.classList.add('active');
+  if(id==='revenue'){loadRevenue()}
+  if(id==='pricing'){loadPricing();loadVouchers()}
+  if(id==='drivers'){loadDrivers()}
+  if(id==='reviews'){loadReviews()}
 }
 
-/* ── Format helpers ── */
+/* ── Format ── */
 function fmt(n){if(!n&&n!==0)return'—';n=+n;if(isNaN(n))return'—';return n>=1000000?(n/1000000).toFixed(1)+'M₫':n.toLocaleString('vi-VN')+'₫'}
-function fmtKm(n){return n?(+n).toFixed(1)+'km':'—'}
+function fmtN(n){return n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(0)+'k':String(n)}
 function initials(name){if(!name)return'?';var p=name.trim().split(' ');return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():name.slice(0,2).toUpperCase()}
 
 /* ── Stats ── */
@@ -271,39 +369,150 @@ function loadStats(){
 function loadRides(){
   fetch('/api/rides').then(function(r){return r.json()}).then(function(d){
     var rides=(d.rides||[]).slice().reverse();
-    document.getElementById('ridesSubtitle').textContent=
-      rides.length>0? rides.length+' cuốc ('+ rides.filter(function(r){return r.status==='waiting'}).length+' đang chạy)' : 'Không có cuốc nào';
+    var waiting=rides.filter(function(r){return r.status==='waiting'}).length;
+    document.getElementById('ridesSubtitle').textContent=rides.length>0?rides.length+' cuốc · '+waiting+' đang chạy':'Không có cuốc nào';
     if(!rides.length){document.getElementById('ridesBody').innerHTML='<tr><td colspan="11" class="empty-td">⏳ Chưa có cuốc xe nào</td></tr>';return}
     var html='';
     rides.forEach(function(r){
       var earn=r.driver_earn_raw?fmt(r.driver_earn_raw):'—';
-      var act=r.status==='waiting'
-        ?'<button class="btn green" onclick="completeRide(\''+r.id+'\')">✅ Hoàn thành</button>'
-        :'<span style="color:var(--green);font-size:12px;font-weight:700">✓ Xong</span>';
-      html+='<tr>'+
-        '<td class="td-mono td-muted">'+r.id+'</td>'+
-        '<td class="td-muted">'+r.created+'</td>'+
-        '<td class="td-bold">'+(r.driver_name||'—')+'</td>'+
-        '<td class="td-mono">'+(r.plate||'—')+'</td>'+
-        '<td class="td-muted">'+(r.vtype==='bike'?'🛵 Xe máy':r.vtype==='car4'?'🚗 4 chỗ':'🚐 7 chỗ')+'</td>'+
-        '<td class="td-mono">'+fmtKm(r.road_km)+'</td>'+
-        '<td class="td-mono td-amber">'+fmt(r.fare)+'</td>'+
-        '<td class="td-mono td-green">'+earn+'</td>'+
-        '<td class="td-muted">'+(r.eta||'—')+' phút</td>'+
-        '<td><span class="pill '+r.status+'">'+(r.status==='waiting'?'🟡 Đang chạy':'✅ Hoàn thành')+'</span></td>'+
-        '<td>'+act+'</td>'+
-      '</tr>';
+      var act=r.status==='waiting'?'<button class="btn green" onclick="completeRide(\''+r.id+'\')">✅ Hoàn thành</button>':'<span style="color:var(--green);font-size:12px;font-weight:700">✓ Xong</span>';
+      var vtypeLabel=r.vtype==='bike'?'🛵 Xe máy':r.vtype==='car4'?'🚗 4 chỗ':'🚐 7 chỗ';
+      html+='<tr><td class="td-mono td-muted">'+r.id+'</td><td class="td-muted">'+r.created+'</td><td class="td-bold">'+(r.driver_name||'—')+'</td><td class="td-mono">'+(r.plate||'—')+'</td><td class="td-muted">'+vtypeLabel+'</td><td class="td-mono">'+(r.road_km||'—')+'km</td><td class="td-mono td-amber">'+fmt(r.fare)+'</td><td class="td-mono td-green">'+earn+'</td><td class="td-muted">'+(r.eta||'—')+' phút</td><td><span class="pill '+r.status+'">'+(r.status==='waiting'?'🟡 Đang chạy':'✅ Hoàn thành')+'</span></td><td>'+act+'</td></tr>';
     });
     document.getElementById('ridesBody').innerHTML=html;
   }).catch(function(){document.getElementById('ridesBody').innerHTML='<tr><td colspan="11" class="empty-td">❌ Lỗi kết nối</td></tr>'});
 }
-
-/* ── Complete ride ── */
 function completeRide(rid){
   if(!confirm('Xác nhận hoàn thành chuyến '+rid+'?'))return;
-  fetch('/complete_ride',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({ride_id:rid})
-  }).then(function(r){return r.json()}).then(function(){loadAll()});
+  fetch('/complete_ride',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ride_id:rid})}).then(function(r){return r.json()}).then(function(){loadAll()});
+}
+
+/* ── Revenue ── */
+var chartMode='daily',revenueChart=null,chartData={daily:[],monthly:[]};
+function loadRevenue(){
+  fetch('/api/revenue_chart').then(function(r){return r.json()}).then(function(d){
+    chartData=d;
+    /* Stats */
+    var allDaily=d.daily||[];
+    var totalRev=allDaily.reduce(function(s,r){return s+(r.revenue||0)},0);
+    var totalEarn=allDaily.reduce(function(s,r){return s+(r.driver_earn||0)},0);
+    var totalRides=allDaily.reduce(function(s,r){return s+(r.rides||0)},0);
+    document.getElementById('rTotalRev').textContent=fmt(totalRev)||'—';
+    document.getElementById('rTotalEarn').textContent=fmt(totalEarn)||'—';
+    document.getElementById('rPlatform').textContent=fmt(totalRev-totalEarn)||'—';
+    document.getElementById('rAvgFare').textContent=totalRides>0?fmt(Math.round(totalRev/totalRides)):'—';
+    renderChart();
+    renderRevenueTable(allDaily);
+  }).catch(function(){});
+}
+function switchChart(mode){
+  chartMode=mode;
+  document.getElementById('btnDay').className=mode==='daily'?'btn accent':'btn';
+  document.getElementById('btnMonth').className=mode==='monthly'?'btn accent':'btn';
+  renderChart();
+}
+function renderChart(){
+  var data=chartMode==='daily'?chartData.daily:chartData.monthly;
+  if(!data||!data.length){return}
+  var labels=data.map(function(d){return chartMode==='daily'?d.date.slice(5):d.month});
+  var revenues=data.map(function(d){return Math.round((d.revenue||0)/1000)});
+  var earns=data.map(function(d){return Math.round((d.driver_earn||0)/1000)});
+  var ctx=document.getElementById('revenueChart').getContext('2d');
+  if(revenueChart)revenueChart.destroy();
+  revenueChart=new Chart(ctx,{
+    type:'bar',
+    data:{labels:labels,datasets:[
+      {label:'Doanh thu (k₫)',data:revenues,backgroundColor:'rgba(37,99,235,.8)',borderRadius:5,order:2},
+      {label:'Driver nhận (k₫)',data:earns,backgroundColor:'rgba(5,150,105,.7)',borderRadius:5,order:1}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{font:{family:'Inter',size:11}}},
+               tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.raw.toLocaleString('vi-VN')+'k₫'}}}},
+      scales:{x:{grid:{display:false},ticks:{font:{family:'Inter',size:10}}},
+              y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{family:'Roboto Mono',size:10},callback:function(v){return v+'k'}}}}
+    }
+  });
+}
+function renderRevenueTable(data){
+  if(!data.length){document.getElementById('revenueBody').innerHTML='<tr><td colspan="5" class="empty-td">Chưa có dữ liệu</td></tr>';return}
+  var html='';
+  data.slice().reverse().forEach(function(r){
+    var plat=(r.revenue||0)-(r.driver_earn||0);
+    html+='<tr><td class="td-mono td-muted">'+r.date+'</td><td class="td-mono">'+r.rides+'</td><td class="td-mono td-amber">'+fmt(r.revenue)+'</td><td class="td-mono td-green">'+fmt(r.driver_earn)+'</td><td class="td-mono" style="color:var(--purple)">'+fmt(plat)+'</td></tr>';
+  });
+  document.getElementById('revenueBody').innerHTML=html;
+}
+
+/* ── Pricing ── */
+function loadPricing(){
+  fetch('/api/pricing').then(function(r){return r.json()}).then(function(d){
+    /* bike */
+    if(d.bike){document.getElementById('p_bike_open').value=d.bike.open;document.getElementById('p_bike_km').value=d.bike.per_km;document.getElementById('p_bike_wait').value=d.bike.wait_min;document.getElementById('p_bike_min').value=d.bike.min}
+    /* car4 */
+    if(d.car4){document.getElementById('p_car4_open').value=d.car4.open;document.getElementById('p_car4_km').value=d.car4.per_km;document.getElementById('p_car4_wait').value=d.car4.wait_min;document.getElementById('p_car4_min').value=d.car4.min}
+    /* car7 */
+    if(d.car7){document.getElementById('p_car7_open').value=d.car7.open;document.getElementById('p_car7_km').value=d.car7.per_km;document.getElementById('p_car7_wait').value=d.car7.wait_min;document.getElementById('p_car7_min').value=d.car7.min}
+    /* surge */
+    document.getElementById('p_surge_morning').value=d.surge_morning_pct||55;
+    document.getElementById('p_surge_evening').value=d.surge_evening_pct||60;
+    document.getElementById('p_surge_night').value=d.surge_night_pct||25;
+    document.getElementById('p_surge_weekend').value=d.surge_weekend_pct||20;
+    document.getElementById('p_surge_max').value=d.surge_max_pct||80;
+    document.getElementById('p_rain_min').value=d.rain_min_pct||10;
+    document.getElementById('p_rain_max').value=d.rain_max_pct||30;
+    document.getElementById('p_storm').value=d.storm_pct||50;
+    document.getElementById('p_region_disc').value=d.region_disc_pct||7;
+    document.getElementById('p_driver_share').value=d.driver_share_pct||80;
+  }).catch(function(){});
+}
+function gv(id){return+document.getElementById(id).value||0}
+function savePricing(){
+  var payload={
+    bike:{open:gv('p_bike_open'),per_km:gv('p_bike_km'),wait_min:gv('p_bike_wait'),min:gv('p_bike_min')},
+    car4:{open:gv('p_car4_open'),per_km:gv('p_car4_km'),wait_min:gv('p_car4_wait'),min:gv('p_car4_min')},
+    car7:{open:gv('p_car7_open'),per_km:gv('p_car7_km'),wait_min:gv('p_car7_wait'),min:gv('p_car7_min')},
+    surge_morning_pct:gv('p_surge_morning'),surge_evening_pct:gv('p_surge_evening'),
+    surge_night_pct:gv('p_surge_night'),surge_weekend_pct:gv('p_surge_weekend'),
+    surge_max_pct:gv('p_surge_max'),
+    rain_min_pct:gv('p_rain_min'),rain_max_pct:gv('p_rain_max'),storm_pct:gv('p_storm'),
+    region_disc_pct:gv('p_region_disc'),driver_share_pct:gv('p_driver_share')
+  };
+  fetch('/api/pricing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(function(r){return r.json()}).then(function(){alert('✅ Đã lưu cấu hình giá!')});
+}
+
+/* ── Vouchers ── */
+function loadVouchers(){
+  fetch('/api/vouchers').then(function(r){return r.json()}).then(function(d){
+    var rows=d.vouchers||[];
+    document.getElementById('voucherSubtitle').textContent=rows.length+' vouchers';
+    if(!rows.length){document.getElementById('voucherBody').innerHTML='<tr><td colspan="7" class="empty-td">Chưa có voucher nào</td></tr>';return}
+    var html='';
+    rows.forEach(function(r){
+      var isActive=r.active==='1'||r.active===1;
+      html+='<tr><td class="td-mono td-bold">'+r.code+'</td><td class="td-mono">'+r.discount_pct+'%</td><td class="td-mono">'+fmt(+r.max_discount)+'</td><td class="td-muted" style="max-width:180px">'+r.description+'</td><td class="td-muted">'+r.expires+'</td><td><span class="pill '+(isActive?'completed':'idle')+'">'+(isActive?'✅ Hoạt động':'⛔ Tắt')+'</span></td><td><button class="btn red" onclick="deleteVoucher(\''+r.code+'\')">🗑</button></td></tr>';
+    });
+    document.getElementById('voucherBody').innerHTML=html;
+  });
+}
+function openAddVoucher(){
+  var d=new Date();d.setFullYear(d.getFullYear()+1);
+  document.getElementById('mv_exp').value=d.toISOString().slice(0,10);
+  document.getElementById('voucherModal').classList.add('show');
+}
+function closeAddVoucher(){document.getElementById('voucherModal').classList.remove('show')}
+function addVoucher(){
+  var code=document.getElementById('mv_code').value.trim().toUpperCase();
+  if(!code){alert('Vui lòng nhập mã voucher');return}
+  fetch('/api/vouchers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    code:code,discount_pct:gv('mv_pct'),max_discount:gv('mv_max'),
+    description:document.getElementById('mv_desc').value,expires:document.getElementById('mv_exp').value,active:'1'
+  })}).then(function(r){return r.json()}).then(function(){closeAddVoucher();loadVouchers()});
+}
+function deleteVoucher(code){
+  if(!confirm('Vô hiệu hóa voucher '+code+'?'))return;
+  fetch('/api/vouchers/'+code,{method:'DELETE'}).then(function(){loadVouchers()});
 }
 
 /* ── Drivers ── */
@@ -311,71 +520,41 @@ var allDrivers=[];
 function loadDrivers(){
   fetch('/api/drivers').then(function(r){return r.json()}).then(function(d){
     allDrivers=d.drivers||[];
-    renderDriverCards(allDrivers);
-    renderEarningsTable(d.earnings||{});
-
-    // Stats
     var total=allDrivers.length;
     var avgR=total>0?(allDrivers.reduce(function(s,d){return s+d.rating},0)/total).toFixed(2):0;
     var top=total>0?allDrivers.reduce(function(a,b){return a.rating>b.rating?a:b}):null;
-    document.getElementById('dTotalDrivers').textContent=total;
-    document.getElementById('dAvgRating').textContent=avgR>0?avgR+'★':'—';
-    document.getElementById('dTopDriver').textContent=top?top.name.split(' ').pop():'—';
+    document.getElementById('dTotal').textContent=total;
+    document.getElementById('dAvgR').textContent=avgR>0?avgR+'★':'—';
+    document.getElementById('dTop').textContent=top?top.name.split(' ').pop():'—';
     document.getElementById('dTotalEarn').textContent=fmt(d.total_driver_earnings||0);
-    document.getElementById('driverSubtitle').textContent=total+' tài xế trong hệ thống';
-  }).catch(function(){document.getElementById('driverGrid').innerHTML='<div style="padding:32px;text-align:center;color:var(--muted)">❌ Lỗi tải dữ liệu</div>'});
+    document.getElementById('driverSubtitle').textContent=total+' tài xế';
+    renderDriverCards(allDrivers);
+    renderEarningsTable(d.earnings||{});
+  });
 }
-
 function renderDriverCards(drivers){
   if(!drivers.length){document.getElementById('driverGrid').innerHTML='<div style="padding:32px;text-align:center;color:var(--muted)">Không có tài xế nào</div>';return}
   var html='';
   drivers.forEach(function(d){
-    var stars=Math.round(d.rating);
-    var starStr='★'.repeat(stars)+'☆'.repeat(5-stars);
-    var pref=d.preference&&d.preference.toLowerCase().includes('quiet')||d.preference&&d.preference.toLowerCase().includes('yên')?
+    var pref=d.preference&&(d.preference.toLowerCase().includes('quiet')||d.preference.toLowerCase().includes('yên')||d.preference.toLowerCase().includes('im'))?
       '<span style="background:var(--green-bg);color:var(--green);border:1px solid var(--green-mid);padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600">🔇 Yên tĩnh</span>':
-      '<span style="background:var(--amber-bg);color:var(--amber);border:1px solid #fde68a;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600">💬 Thích nói chuyện</span>';
-    html+='<div class="dcard">'+
-      '<div class="dcard-head">'+
-        '<div class="dav">'+initials(d.name)+'</div>'+
-        '<div><div class="dcard-name">'+d.name+'</div>'+
-          '<div class="dcard-pref">'+pref+'</div>'+
-        '</div>'+
-      '</div>'+
-      '<div class="dcard-stats">'+
-        '<div class="dstat"><div class="dstat-label">Rating</div><div class="dstat-val amber">'+d.rating+' ★</div></div>'+
-        '<div class="dstat"><div class="dstat-label">Driver nhận</div><div class="dstat-val green">'+fmt(d.total_earn||0)+'</div></div>'+
-        '<div class="dstat"><div class="dstat-label">Số chuyến</div><div class="dstat-val">'+(d.total_trips||0)+'</div></div>'+
-        '<div class="dstat"><div class="dstat-label">Doanh thu</div><div class="dstat-val">'+(d.total_revenue?fmt(d.total_revenue):'—')+'</div></div>'+
-      '</div>'+
-      '<div class="dcard-lat">📍 '+d.lat.toFixed(4)+', '+d.lon.toFixed(4)+'</div>'+
-    '</div>';
+      '<span style="background:var(--amber-bg);color:var(--amber);border:1px solid #fde68a;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600">💬 Trò chuyện</span>';
+    html+='<div class="dcard"><div class="dcard-head"><div class="dav">'+initials(d.name)+'</div><div><div class="dcard-name">'+d.name+'</div><div class="dcard-pref">'+pref+'</div></div></div><div class="dcard-stats"><div class="dstat"><div class="dstat-label">Rating</div><div class="dstat-val amber">'+d.rating+'★</div></div><div class="dstat"><div class="dstat-label">Driver nhận</div><div class="dstat-val green">'+fmt(d.total_earn||0)+'</div></div><div class="dstat"><div class="dstat-label">Số chuyến</div><div class="dstat-val">'+(d.total_trips||0)+'</div></div><div class="dstat"><div class="dstat-label">DT KH</div><div class="dstat-val">'+fmt(d.total_revenue||0)+'</div></div></div></div>';
   });
   document.getElementById('driverGrid').innerHTML=html;
 }
-
-function filterDriverCards(){
-  var q=document.getElementById('driverSearch').value.toLowerCase();
+function filterDrivers(){
+  var q=document.getElementById('dSearch').value.toLowerCase();
   renderDriverCards(allDrivers.filter(function(d){return d.name.toLowerCase().includes(q)}));
 }
-
 function renderEarningsTable(earnings){
   var rows=Object.values(earnings);
-  if(!rows.length){document.getElementById('earningsBody').innerHTML='<tr><td colspan="6" class="empty-td">Chưa có dữ liệu thu nhập</td></tr>';return}
+  if(!rows.length){document.getElementById('earningsBody').innerHTML='<tr><td colspan="6" class="empty-td">Chưa có dữ liệu</td></tr>';return}
   rows.sort(function(a,b){return(b.total_earn||0)-(a.total_earn||0)});
   var html='';
   rows.forEach(function(e,i){
-    var rev=e.total_revenue||0;
-    var earn=e.total_earn||0;
-    var platform=rev-earn;
-    html+='<tr>'+
-      '<td class="td-bold">'+(i===0?'🏆 ':'')+e.driver_name+'</td>'+
-      '<td><span class="stars">'+'★'.repeat(Math.round(e.rating||0))+'</span> <span style="font-family:\'Roboto Mono\',monospace;font-size:12px">'+((e.rating||0).toFixed(1))+'</span></td>'+
-      '<td class="td-mono">'+(e.trip_count||0)+'</td>'+
-      '<td class="td-mono td-amber">'+fmt(rev)+'</td>'+
-      '<td class="td-mono td-green">'+fmt(earn)+'</td>'+
-      '<td class="td-mono" style="color:var(--muted)">'+fmt(platform)+'</td>'+
-    '</tr>';
+    var rev=e.total_revenue||0,earn=e.total_earn||0,plat=rev-earn;
+    html+='<tr><td class="td-bold">'+(i===0?'🏆 ':'')+e.driver_name+'</td><td><span class="stars">'+'★'.repeat(Math.min(5,Math.round(e.rating||0)))+'</span> '+((e.rating||0).toFixed(1))+'</td><td class="td-mono">'+(e.trip_count||0)+'</td><td class="td-mono td-amber">'+fmt(rev)+'</td><td class="td-mono td-green">'+fmt(earn)+'</td><td class="td-mono" style="color:var(--purple)">'+fmt(plat)+'</td></tr>';
   });
   document.getElementById('earningsBody').innerHTML=html;
 }
@@ -384,43 +563,29 @@ function renderEarningsTable(earnings){
 var PAGE=10,curPage=1,allReviews=[];
 function loadReviews(){
   fetch('/api/reviews').then(function(r){return r.json()}).then(function(d){
-    allReviews=(d.reviews||[]).slice().reverse();
-    curPage=1;renderReviews();
+    allReviews=(d.reviews||[]).slice().reverse();curPage=1;renderReviews();
   });
 }
 function renderReviews(){
-  var total=allReviews.length;
-  var start=(curPage-1)*PAGE,end=Math.min(start+PAGE,total);
-  var slice=allReviews.slice(start,end);
+  var total=allReviews.length,start=(curPage-1)*PAGE,end=Math.min(start+PAGE,total),slice=allReviews.slice(start,end);
   document.getElementById('reviewSubtitle').textContent=total+' đánh giá';
   document.getElementById('pageInfo').textContent=total?'Hiển thị '+(start+1)+'–'+end+' / '+total:'';
   document.getElementById('prevBtn').disabled=curPage<=1;
   document.getElementById('nextBtn').disabled=end>=total;
-  if(!total){document.getElementById('reviewBody').innerHTML='<tr><td colspan="7" class="empty-td">Chưa có đánh giá nào</td></tr>';return}
+  if(!total){document.getElementById('reviewBody').innerHTML='<tr><td colspan="8" class="empty-td">Chưa có đánh giá nào</td></tr>';return}
   var html='';
   slice.forEach(function(r,i){
     var s=parseInt(r.stars)||0;
     var tags=(r.tags||'').split(',').filter(function(t){return t.trim()}).map(function(t){return'<span class="tag">'+t.trim()+'</span>'}).join('');
-    html+='<tr>'+
-      '<td class="td-muted">'+(start+i+1)+'</td>'+
-      '<td class="td-muted" style="font-family:\'Roboto Mono\',monospace;font-size:11px">'+(r.timestamp||'—')+'</td>'+
-      '<td class="td-bold">'+(r.driver_name||'—')+'</td>'+
-      '<td class="td-mono">'+(r.plate||'—')+'</td>'+
-      '<td><span class="stars">'+'★'.repeat(s)+'☆'.repeat(5-s)+'</span></td>'+
-      '<td>'+(tags||'<span class="td-muted">—</span>')+'</td>'+
-      '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(r.comment||'')+'">'+
-        (r.comment||'<span class="td-muted">—</span>')+
-      '</td>'+
-    '</tr>';
+    html+='<tr><td class="td-muted">'+(start+i+1)+'</td><td class="td-muted" style="font-family:Roboto Mono,monospace;font-size:11px">'+(r.timestamp||'—')+'</td><td class="td-bold">'+(r.driver_name||'—')+'</td><td class="td-mono">'+(r.plate||'—')+'</td><td><span class="stars">'+'★'.repeat(s)+'☆'.repeat(5-s)+'</span></td><td class="td-mono td-amber">'+(r.fare?fmt(+r.fare):'—')+'</td><td>'+(tags||'<span class="td-muted">—</span>')+'</td><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(r.comment||'')+'">'+( r.comment||'<span class="td-muted">—</span>')+'</td></tr>';
   });
   document.getElementById('reviewBody').innerHTML=html;
 }
 function changePage(d){curPage=Math.max(1,Math.min(Math.ceil(allReviews.length/PAGE),curPage+d));renderReviews()}
 
-/* ── Load all ── */
-function loadAll(){loadStats();loadRides();}
+/* ── Init ── */
+function loadAll(){loadStats();loadRides()}
 loadAll();
-setInterval(function(){loadStats();loadRides();},4000);
+setInterval(function(){loadStats();loadRides()},4000);
 </script>
-</body>
-</html>
+</body></html>

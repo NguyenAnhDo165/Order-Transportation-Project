@@ -714,7 +714,7 @@ function submitReview(){
   btn.disabled=true; btn.textContent='Đang gửi...';
   fetch('/submit_review',{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({driver_name:DRIVER_NAME,plate:DRIVER_PLATE,stars:selStars,tags:selTags.join(', '),comment:comment})
+    body:JSON.stringify({ride_id:RIDE_ID,driver_name:DRIVER_NAME,plate:DRIVER_PLATE,stars:selStars,tags:selTags.join(', '),comment:comment})
   }).then(function(r){return r.json()}).then(function(){
     document.getElementById('reviewOverlay').classList.remove('active');
     document.getElementById('thankyouScreen').classList.add('active');
