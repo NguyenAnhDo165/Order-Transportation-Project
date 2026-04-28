@@ -53,48 +53,8 @@
     .center-btn{position:absolute;top:12px;right:12px;z-index:50;width:36px;height:36px;background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;backdrop-filter:blur(12px);box-shadow:var(--sh2);transition:background .15s}
     .center-btn.tracking{background:#2563eb;border-color:#2563eb}
     .center-btn.tracking span{filter:brightness(10)}
-
-    /* ARRIVED MODAL (thay toast) */
-    .arrived-modal{
-      position:absolute;inset:0;z-index:300;
-      display:flex;align-items:center;justify-content:center;
-      background:rgba(0,0,0,.45);backdrop-filter:blur(6px);
-      opacity:0;pointer-events:none;
-      transition:opacity .4s ease;
-    }
-    .arrived-modal.show{opacity:1;pointer-events:all}
-    .arrived-card{
-      background:#fff;
-      border-radius:24px;
-      padding:28px 24px;
-      display:flex;flex-direction:column;align-items:center;gap:12px;
-      text-align:center;
-      width:84%;
-      box-shadow:0 20px 60px rgba(0,0,0,.25);
-      transform:scale(.88) translateY(20px);
-      transition:transform .45s cubic-bezier(.16,1,.3,1);
-    }
-    .arrived-modal.show .arrived-card{transform:scale(1) translateY(0)}
-    .arrived-pulse-wrap{position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:4px}
-    .arrived-ring{position:absolute;width:76px;height:76px;border-radius:50%;border:2px solid rgba(5,150,105,.25);animation:arrivedRing 1.5s ease-in-out infinite}
-    .arrived-ring:nth-child(2){width:96px;height:96px;animation-delay:.4s;border-color:rgba(5,150,105,.12)}
-    @keyframes arrivedRing{0%{transform:scale(.9);opacity:1}100%{transform:scale(1.1);opacity:0}}
-    .arrived-icon-circle{
-      position:relative;z-index:2;
-      width:60px;height:60px;border-radius:50%;
-      background:linear-gradient(135deg,#059669,#10b981);
-      display:flex;align-items:center;justify-content:center;
-      font-size:28px;
-      box-shadow:0 8px 24px rgba(5,150,105,.35);
-    }
-    .arrived-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:800;color:var(--text);letter-spacing:-.3px}
-    .arrived-sub{font-size:12px;color:var(--sub);line-height:1.5}
-    .arrived-ok{
-      width:100%;height:42px;background:var(--green);border:none;border-radius:12px;
-      color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;
-      cursor:pointer;box-shadow:0 3px 12px rgba(5,150,105,.3);transition:background .15s;
-    }
-    .arrived-ok:hover{background:#047857}
+    .arrived-toast{position:absolute;top:60px;left:50%;transform:translateX(-50%) translateY(-20px);z-index:100;background:var(--green);color:#fff;padding:10px 18px;border-radius:30px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;box-shadow:0 4px 20px rgba(5,150,105,.4);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .4s ease,transform .4s ease}
+    .arrived-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
     /* BOTTOM SHEET */
     .bottom-sheet{flex-shrink:0;background:var(--white);border-top:1px solid var(--border);border-radius:24px 24px 0 0;box-shadow:0 -4px 30px rgba(15,23,42,.12);padding:0 16px 6px;display:flex;flex-direction:column;gap:9px}
@@ -144,31 +104,24 @@
     .home-indicator{height:22px;display:flex;align-items:center;justify-content:center;background:var(--white)}
     .home-bar{width:100px;height:4px;background:#1e293b;border-radius:2px;opacity:.12}
 
-    /* ══ CALL OVERLAY — plain background (NO MAP) ══ */
+    /* ══ CALL OVERLAY — full phone cover, z-index above map ══ */
     .call-overlay{
-      position:absolute;inset:0;z-index:500;
-      background:linear-gradient(160deg,#0c1a3a 0%,#071020 55%,#0a1a2e 100%);
+      position:absolute;inset:0;z-index:500;   /* higher than map z-index */
+      background:linear-gradient(170deg,#0f1e3d 0%,#0a0f1e 100%);
       display:flex;flex-direction:column;align-items:center;justify-content:space-between;
       padding:54px 28px 44px;
       opacity:0;pointer-events:none;
       transition:opacity .3s ease;
-      border-radius:44px;
+      border-radius:44px;   /* matches phone shell */
     }
     .call-overlay.active{opacity:1;pointer-events:all}
 
-    /* Subtle pattern overlay */
-    .call-overlay::before{
-      content:'';position:absolute;inset:0;border-radius:44px;
-      background:radial-gradient(ellipse at 50% 30%, rgba(37,99,235,.18) 0%, transparent 65%),
-                 radial-gradient(ellipse at 80% 80%, rgba(6,182,212,.1) 0%, transparent 50%);
-      pointer-events:none;
-    }
-
-    /* Avatar */
-    .call-top{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;position:relative;z-index:2}
+    /* Avatar circle with pulse rings */
+    .call-top{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
     .call-avatar-wrap{position:relative;display:flex;align-items:center;justify-content:center}
     .call-avatar-ring{
-      position:absolute;width:104px;height:104px;border-radius:50%;
+      position:absolute;
+      width:104px;height:104px;border-radius:50%;
       border:2px solid rgba(99,179,255,.25);
       animation:ringPulse 2s ease-in-out infinite;
     }
@@ -176,27 +129,24 @@
     .call-avatar-ring:nth-child(3){width:148px;height:148px;animation-delay:1s;border-color:rgba(99,179,255,.08)}
     @keyframes ringPulse{0%{transform:scale(.95);opacity:.8}50%{transform:scale(1);opacity:1}100%{transform:scale(.95);opacity:.8}}
 
-    /* Avatar circle with initials */
     .call-avatar{
       position:relative;z-index:2;
       width:88px;height:88px;border-radius:50%;
       background:linear-gradient(135deg,#1e40af,#0891b2);
-      border:3px solid rgba(255,255,255,.18);
+      border:3px solid rgba(255,255,255,.15);
       display:flex;align-items:center;justify-content:center;
       font-family:'Plus Jakarta Sans',sans-serif;
       font-size:30px;font-weight:800;color:#fff;
-      box-shadow:0 8px 32px rgba(0,0,0,.4), 0 0 0 6px rgba(37,99,235,.2);
     }
-
     .call-name{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:800;color:#fff;letter-spacing:-.3px;margin-top:4px}
     .call-role{font-size:12px;color:rgba(255,255,255,.45);font-weight:400;margin-top:2px}
     .call-plate{font-family:'Roboto Mono',monospace;font-size:12px;font-weight:600;color:rgba(255,255,255,.35);letter-spacing:.12em;margin-top:1px}
     .call-status{font-size:13px;color:rgba(99,179,255,.8);animation:fadePulse 1.5s ease-in-out infinite;margin-top:8px}
     @keyframes fadePulse{0%,100%{opacity:.5}50%{opacity:1}}
 
-    .call-timer{font-family:'Roboto Mono',monospace;font-size:38px;font-weight:700;color:#fff;letter-spacing:-2px;text-align:center;position:relative;z-index:2}
+    .call-timer{font-family:'Roboto Mono',monospace;font-size:38px;font-weight:700;color:#fff;letter-spacing:-2px;text-align:center}
 
-    .call-actions{display:flex;gap:24px;align-items:flex-end;justify-content:center;width:100%;position:relative;z-index:2}
+    .call-actions{display:flex;gap:24px;align-items:flex-end;justify-content:center;width:100%}
     .call-btn{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer}
     .call-btn-icon{display:flex;align-items:center;justify-content:center;font-size:22px;border-radius:50%;transition:transform .15s;background:rgba(255,255,255,.1)}
     .call-btn-icon:hover{transform:scale(1.08)}
@@ -205,54 +155,31 @@
     .cb-end{background:#dc2626 !important;box-shadow:0 4px 20px rgba(220,38,38,.5);width:64px !important;height:64px !important;font-size:26px !important}
     .cb-muted{background:rgba(255,255,255,.25) !important}
 
-    /* REVIEW OVERLAY — enhanced Grab/Be style */
-    .review-overlay{position:absolute;inset:0;z-index:400;background:rgba(15,23,42,.6);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .35s ease;border-radius:44px}
+    /* REVIEW OVERLAY */
+    .review-overlay{position:absolute;inset:0;z-index:400;background:rgba(15,23,42,.55);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .35s ease;border-radius:44px}
     .review-overlay.active{opacity:1;pointer-events:all}
-    .review-sheet{width:100%;background:var(--white);border-radius:28px 28px 0 0;padding:6px 18px 30px;display:flex;flex-direction:column;gap:12px;transform:translateY(100%);transition:transform .45s cubic-bezier(.16,1,.3,1)}
+    .review-sheet{width:100%;background:var(--white);border-radius:28px 28px 0 0;padding:18px 18px 28px;display:flex;flex-direction:column;gap:13px;transform:translateY(100%);transition:transform .45s cubic-bezier(.16,1,.3,1)}
     .review-overlay.active .review-sheet{transform:translateY(0)}
-    .review-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:8px auto 2px}
-
-    /* Trip summary card */
-    .trip-summary{background:linear-gradient(135deg,#f0f9ff,#ecfdf5);border:1px solid #bae6fd;border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:10px}
-    .ts-icon{font-size:26px;flex-shrink:0}
-    .ts-info{flex:1;min-width:0}
-    .ts-label{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
-    .ts-fare{font-family:'Roboto Mono',monospace;font-size:18px;font-weight:700;color:var(--accent);letter-spacing:-1px}
-    .ts-km{font-size:11px;color:var(--sub);margin-top:1px}
-    .ts-badge{padding:3px 9px;border-radius:20px;background:var(--green-bg);color:var(--green);border:1px solid #a7f3d0;font-size:10px;font-weight:700;flex-shrink:0}
-
-    /* Driver row */
+    .review-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto}
     .review-driver-row{display:flex;align-items:center;gap:12px;padding:10px 12px;background:#f8fafc;border-radius:14px}
     .review-av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#dbeafe,#bfdbfe);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:800;color:var(--accent);flex-shrink:0}
     .review-dname{font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;color:var(--text)}
-    .review-dplate{font-family:'Roboto Mono',monospace;font-size:11px;color:var(--muted);margin-top:1px}
-    .review-drating{font-size:11px;color:var(--amber);font-weight:600;margin-top:2px}
-
+    .review-dplate{font-family:'Roboto Mono',monospace;font-size:11px;color:var(--muted)}
     .review-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:800;color:var(--text);text-align:center;letter-spacing:-.3px}
     .review-sub{font-size:11px;color:var(--muted);text-align:center;margin-top:-6px}
-
-    /* Stars */
-    .star-row{display:flex;justify-content:center;gap:4px}
-    .star{font-size:36px;cursor:pointer;opacity:.18;transition:opacity .15s,transform .2s;user-select:none;filter:grayscale(1)}
-    .star.lit{opacity:1;filter:none}
-    .star:hover{transform:scale(1.2)}
-
-    /* Star label */
-    .star-label{text-align:center;font-size:12px;font-weight:600;color:var(--accent);min-height:18px;transition:opacity .2s}
-
-    /* Tags */
-    .quick-tags{display:flex;gap:5px;flex-wrap:wrap}
-    .qtag{padding:5px 11px;border:1.5px solid var(--border);border-radius:20px;font-size:11px;font-weight:500;color:var(--sub);cursor:pointer;background:var(--white);transition:all .18s;user-select:none}
-    .qtag:hover{border-color:var(--accent-mid);color:var(--accent);background:var(--accent-light)}
-    .qtag.sel{background:var(--accent);border-color:var(--accent);color:#fff}
-
-    .comment-box{width:100%;min-height:58px;padding:10px 12px;border:1.5px solid var(--border);border-radius:12px;font-family:'Inter',sans-serif;font-size:13px;color:var(--text);resize:none;outline:none;background:#f8fafc;transition:border-color .18s}
+    .star-row{display:flex;justify-content:center;gap:6px}
+    .star{font-size:34px;cursor:pointer;opacity:.2;transition:opacity .15s,transform .15s;user-select:none}
+    .star.lit{opacity:1}
+    .star:hover{transform:scale(1.15)}
+    .comment-box{width:100%;min-height:64px;padding:10px 12px;border:1.5px solid var(--border);border-radius:12px;font-family:'Inter',sans-serif;font-size:13px;color:var(--text);resize:none;outline:none;background:#f8fafc;transition:border-color .18s}
     .comment-box:focus{border-color:var(--accent);background:var(--accent-light)}
     .comment-box::placeholder{color:var(--muted)}
-
-    .submit-btn{width:100%;height:48px;background:var(--accent);border:none;border-radius:14px;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,.3);transition:all .18s;letter-spacing:-.2px}
-    .submit-btn:hover{background:var(--accent-dk);transform:translateY(-1px)}
-    .submit-btn:disabled{background:var(--muted);box-shadow:none;cursor:not-allowed;transform:none}
+    .quick-tags{display:flex;gap:5px;flex-wrap:wrap}
+    .qtag{padding:5px 10px;border:1px solid var(--border);border-radius:20px;font-size:11px;font-weight:500;color:var(--sub);cursor:pointer;background:var(--white);transition:all .15s;user-select:none}
+    .qtag:hover,.qtag.sel{background:var(--accent-light);border-color:var(--accent-mid);color:var(--accent)}
+    .submit-btn{width:100%;height:46px;background:var(--accent);border:none;border-radius:13px;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 3px 14px rgba(37,99,235,.28);transition:background .18s}
+    .submit-btn:hover{background:var(--accent-dk)}
+    .submit-btn:disabled{background:var(--muted);box-shadow:none;cursor:not-allowed}
 
     /* THANKYOU */
     .thankyou{position:absolute;inset:0;z-index:500;background:linear-gradient(160deg,#eef2ff 0%,#f0fdf4 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;opacity:0;pointer-events:none;transition:opacity .5s ease;padding:32px;text-align:center;border-radius:44px}
@@ -261,9 +188,13 @@
     @keyframes bounce{0%{transform:scale(.5)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
     .ty-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.4px}
     .ty-sub{font-size:13px;color:var(--sub);line-height:1.6}
-    .ty-stars{font-size:26px;letter-spacing:2px}
-    .ty-btn{margin-top:8px;padding:13px 32px;background:var(--accent);color:#fff;border:none;border-radius:14px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,.28)}
+    .ty-btn{margin-top:8px;padding:13px 32px;background:var(--accent);color:#fff;border:none;border-radius:13px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 3px 14px rgba(37,99,235,.28)}
     .ty-btn:hover{background:var(--accent-dk)}
+  
+    /* Leaflet tooltip reset for clean-tip class */
+    .clean-tip { background:transparent !important; border:none !important;
+                 box-shadow:none !important; padding:0 !important; }
+    .clean-tip::before { display:none !important; }
   </style>
 </head>
 <body>
@@ -280,20 +211,7 @@
     <div id="map"></div>
     <a class="back-btn" href="/">← Đặt lại</a>
     <div class="center-btn tracking" id="centerBtn"><span>📍</span></div>
-
-    <!-- ARRIVED MODAL (replaces toast) -->
-    <div class="arrived-modal" id="arrivedModal">
-      <div class="arrived-card">
-        <div class="arrived-pulse-wrap">
-          <div class="arrived-ring"></div>
-          <div class="arrived-ring"></div>
-          <div class="arrived-icon-circle">🚗</div>
-        </div>
-        <div class="arrived-title">Tài xế đã tới! 🎉</div>
-        <div class="arrived-sub">Vui lòng ra điểm đón và lên xe.<br>Chúc bạn chuyến đi vui vẻ!</div>
-        <button class="arrived-ok" onclick="closeArrivedModal()">Đã hiểu, lên xe ngay →</button>
-      </div>
-    </div>
+    <div class="arrived-toast" id="arrivedToast">🟢 Tài xế đã đến điểm đón!</div>
   </div>
 
   <!-- BOTTOM SHEET -->
@@ -347,7 +265,7 @@
   </div>
   <div class="home-indicator"><div class="home-bar"></div></div>
 
-  <!-- ══ CALL OVERLAY — plain background (no map showing through) ══ -->
+  <!-- ══ CALL OVERLAY (z-500, covers everything incl. map) ══ -->
   <div class="call-overlay" id="callOverlay">
     <div class="call-top">
       <div class="call-avatar-wrap">
@@ -380,35 +298,19 @@
     </div>
   </div>
 
-  <!-- REVIEW OVERLAY — enhanced -->
+  <!-- REVIEW OVERLAY -->
   <div class="review-overlay" id="reviewOverlay">
     <div class="review-sheet">
       <div class="review-handle"></div>
-
-      <!-- Trip summary -->
-      <div class="trip-summary">
-        <div class="ts-icon">🛣️</div>
-        <div class="ts-info">
-          <div class="ts-label">Chuyến đi hoàn thành</div>
-          <div class="ts-fare">{{ driver.fare }}₫</div>
-          <div class="ts-km">{{ driver.road_km }} km</div>
-        </div>
-        <div class="ts-badge">✓ Xong</div>
-      </div>
-
-      <!-- Driver info -->
       <div class="review-driver-row">
         <div class="review-av">{{ driver.initials }}</div>
         <div>
           <div class="review-dname">{{ driver.name }}</div>
-          <div class="review-dplate">{{ driver.plate }} · {{ driver.vehicle }}</div>
-          <div class="review-drating">★ {{ driver.rating }} · {{ driver.trips }} chuyến</div>
+          <div class="review-dplate">{{ driver.plate }}</div>
         </div>
       </div>
-
-      <div class="review-title">Bạn cảm thấy thế nào? 🌟</div>
-      <div class="review-sub">Đánh giá giúp tài xế cải thiện dịch vụ</div>
-
+      <div class="review-title">Đánh giá chuyến đi 🌟</div>
+      <div class="review-sub">Chuyến đi của bạn đã hoàn thành</div>
       <div class="star-row" id="starRow">
         <span class="star" data-v="1">⭐</span>
         <span class="star" data-v="2">⭐</span>
@@ -416,19 +318,16 @@
         <span class="star" data-v="4">⭐</span>
         <span class="star" data-v="5">⭐</span>
       </div>
-      <div class="star-label" id="starLabel"></div>
-
-      <div class="quick-tags" id="tagArea" style="display:none">
+      <div class="quick-tags">
         <span class="qtag" onclick="toggleTag(this)">🚀 Đúng giờ</span>
-        <span class="qtag" onclick="toggleTag(this)">🛡️ Lái an toàn</span>
+        <span class="qtag" onclick="toggleTag(this)">🛵 Lái an toàn</span>
         <span class="qtag" onclick="toggleTag(this)">😊 Thân thiện</span>
         <span class="qtag" onclick="toggleTag(this)">🔇 Yên tĩnh</span>
         <span class="qtag" onclick="toggleTag(this)">🧹 Xe sạch</span>
         <span class="qtag" onclick="toggleTag(this)">📍 Đúng điểm</span>
       </div>
-
-      <textarea class="comment-box" id="commentBox" placeholder="Để lại nhận xét cho tài xế..." style="display:none"></textarea>
-      <button class="submit-btn" id="submitBtn" onclick="submitReview()" disabled>Gửi đánh giá →</button>
+      <textarea class="comment-box" id="commentBox" placeholder="Để lại nhận xét cho tài xế..."></textarea>
+      <button class="submit-btn" id="submitBtn" onclick="submitReview()" disabled>✓ &nbsp;Gửi đánh giá</button>
     </div>
   </div>
 
@@ -436,7 +335,6 @@
   <div class="thankyou" id="thankyouScreen">
     <div class="ty-icon">🎉</div>
     <div class="ty-title">Cảm ơn bạn!</div>
-    <div class="ty-stars" id="tyStars"></div>
     <div class="ty-sub">Đánh giá của bạn đã được gửi.<br>Hẹn gặp lại trên GoRide! 🛵</div>
     <button class="ty-btn" onclick="window.location.href='/'">Đặt xe mới</button>
   </div>
@@ -455,9 +353,7 @@ var DEST_LON    = {{ driver.dest_lon | float }};
 var DRIVER_NAME = {{ driver.name | tojson }};
 var DRIVER_PLATE= {{ driver.plate | tojson }};
 var DRIVER_INIT = {{ driver.initials | tojson }};
-var DRIVER_RATING = {{ driver.rating | float }};
-var DRIVER_FARE = {{ driver.fare | tojson }};
-var DRIVER_KM   = {{ driver.road_km | float }};
+var RIDE_ID     = {{ driver.ride_id | tojson }};
 
 /* approach_route: driver → pickup, along real roads */
 var APPROACH_ROUTE = {{ driver.approach_route | tojson if driver.approach_route else '[]' }};
@@ -474,15 +370,21 @@ var map = L.map('map',{zoomControl:false,attributionControl:false})
 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
   {subdomains:'abcd',maxZoom:19}).addTo(map);
 
-/* Custom icons */
-var pickupIcon = L.divIcon({className:'',
-  html:'<div style="width:14px;height:14px;background:#059669;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>',
-  iconSize:[14,14],iconAnchor:[7,7]});
-var destIcon = L.divIcon({className:'',
-  html:'<div style="width:14px;height:14px;background:#dc2626;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>',
-  iconSize:[14,14],iconAnchor:[7,7]});
-var driverIconHTML = '<div style="font-size:24px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));line-height:1" id="driverEmoji">🛵</div>';
-var driverIcon = L.divIcon({className:'',html:driverIconHTML,iconSize:[28,28],iconAnchor:[14,14]});
+/* ── Custom map markers ── */
+function svgPin(fill, label){
+  return '<div style="position:relative;text-align:center;width:36px">' +
+    '<svg width="36" height="44" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+      '<path d="M18 0C8.06 0 0 8.06 0 18c0 13.5 18 26 18 26S36 31.5 36 18C36 8.06 27.94 0 18 0z" fill="' + fill + '"/>' +
+      '<circle cx="18" cy="18" r="9" fill="white"/>' +
+    '</svg>' +
+    '<div style="position:absolute;top:7px;left:0;width:36px;text-align:center;font-size:11px;font-weight:700;font-family:Inter,sans-serif;color:' + fill + '">' + label + '</div>' +
+  '</div>';
+}
+
+var pickupIcon = L.divIcon({className:'', html:svgPin('#059669','A'), iconSize:[36,44], iconAnchor:[18,44]});
+var destIcon   = L.divIcon({className:'', html:svgPin('#2563eb','B'), iconSize:[36,44], iconAnchor:[18,44]});
+var driverIconHTML = '<div style="font-size:26px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.45));line-height:1" id="driverEmoji">🛵</div>';
+var driverIcon = L.divIcon({className:'',html:driverIconHTML,iconSize:[30,30],iconAnchor:[15,15]});
 
 L.marker([PICKUP_LAT,PICKUP_LON],{icon:pickupIcon}).addTo(map)
   .bindTooltip('📍 Điểm đón',{permanent:true,direction:'top',offset:[0,-10]});
@@ -514,11 +416,12 @@ if(APPROACH_ROUTE.length <= 1){
   else approachLine = L.polyline(APPROACH_ROUTE,{color:'#059669',weight:4,opacity:.85}).addTo(map);
 }
 
-/* ─── Driver movement along route ─── */
+/* ─── Driver movement ─── */
 var currentStep = 0;
 var totalSteps  = APPROACH_ROUTE.length;
+/* Distribute steps evenly across ETA seconds */
 var TOTAL_SECS  = Math.max(10, ETA * 60);
-var msPerStep   = (TOTAL_SECS / totalSteps) * 1000;
+var msPerStep   = (TOTAL_SECS / totalSteps) * 1000;  /* ms between each node */
 var isTracking  = true;
 var prevBearing = 0;
 
@@ -567,40 +470,42 @@ function enableTracking(){
   map.setView(pos, 16, {animate:true, duration:.6});
 }
 document.getElementById('centerBtn').addEventListener('click', enableTracking);
+/* Stop auto-tracking when user drags */
 map.on('dragstart', function(){
   isTracking = false;
   document.getElementById('centerBtn').classList.remove('tracking');
 });
 
-/* ─── Arrived modal ─── */
+/* ─── Arrived ─── */
 function onDriverArrived(){
-  document.getElementById('arrivedModal').classList.add('show');
+  var toast = document.getElementById('arrivedToast');
+  toast.classList.add('show');
   map.setView([PICKUP_LAT,PICKUP_LON],17,{animate:true,duration:.8});
-  pollComplete();
+  setTimeout(function(){ toast.classList.remove('show'); }, 4500);
+  /* Nếu chưa completed thì vẫn poll tiếp */
 }
-function closeArrivedModal(){
-  document.getElementById('arrivedModal').classList.remove('show');
+function showReview(){
+  if(reviewShown) return;
+  reviewShown = true;
+  document.getElementById('reviewOverlay').classList.add('active');
 }
+var reviewShown = false;
 
-/* ─── Poll /ride_status — bắt đầu NGAY từ đầu ─── */
-var _pollIv = null;
-function pollComplete(){
-  if(_pollIv) return; /* tránh chạy 2 lần */
-  _pollIv = setInterval(function(){
-    fetch('/ride_status').then(function(r){return r.json()}).then(function(d){
-      if(d.status==='completed'){
-        clearInterval(_pollIv);
-        _pollIv = null;
-        document.getElementById('arrivedModal').classList.remove('show');
-        showReview();
+/* ─── Poll NGAY từ đầu, mỗi 1.5s ─── */
+var pollIv = setInterval(function(){
+  fetch('/ride_status?id=' + RIDE_ID)
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d.status === 'completed'){
+        clearInterval(pollIv);
+        /* Trigger arrived toast nếu xe chưa đến */
+        var toast = document.getElementById('arrivedToast');
+        toast.classList.add('show');
+        setTimeout(function(){ toast.classList.remove('show'); }, 3500);
+        setTimeout(showReview, 800);
       }
     }).catch(function(){});
-  }, 2000);
-}
-function showReview(){ document.getElementById('reviewOverlay').classList.add('active'); }
-
-/* Bắt đầu poll ngay khi trang load */
-pollComplete();
+}, 1500);
 
 /* ─── ETA bar + countdown ─── */
 setTimeout(function(){ animateBar(ETA); startCountdown(ETA); }, 400);
@@ -652,27 +557,17 @@ function toggleSpeaker(){
 
 /* ─── Review ─── */
 var selStars=0, selTags=[];
-var starLabels=['','Tệ 😞','Chưa ổn 😐','Tạm được 🙂','Tốt 😊','Tuyệt vời! 🤩'];
-
 document.getElementById('starRow').addEventListener('click',function(e){
   var s=e.target.closest('.star'); if(!s)return;
   selStars=parseInt(s.dataset.v);
-  document.querySelectorAll('.star').forEach(function(st){
-    st.classList.toggle('lit',parseInt(st.dataset.v)<=selStars);
-  });
-  document.getElementById('starLabel').textContent=starLabels[selStars]||'';
+  document.querySelectorAll('.star').forEach(function(st){st.classList.toggle('lit',parseInt(st.dataset.v)<=selStars);});
   document.getElementById('submitBtn').disabled=false;
-  /* Show tags and comment after selecting stars */
-  document.getElementById('tagArea').style.display='flex';
-  document.getElementById('commentBox').style.display='block';
 });
-
 function toggleTag(el){
   el.classList.toggle('sel');
   var lb=el.textContent.trim(), idx=selTags.indexOf(lb);
   if(idx>=0)selTags.splice(idx,1); else selTags.push(lb);
 }
-
 function submitReview(){
   var comment=document.getElementById('commentBox').value.trim();
   var btn=document.getElementById('submitBtn');
@@ -681,9 +576,6 @@ function submitReview(){
     method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({driver_name:DRIVER_NAME,plate:DRIVER_PLATE,stars:selStars,tags:selTags.join(', '),comment:comment})
   }).then(function(r){return r.json()}).then(function(){
-    /* Show thank you with selected stars */
-    var starsDisplay = '⭐'.repeat(selStars);
-    document.getElementById('tyStars').textContent=starsDisplay;
     document.getElementById('reviewOverlay').classList.remove('active');
     document.getElementById('thankyouScreen').classList.add('active');
   }).catch(function(){

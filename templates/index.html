@@ -3,646 +3,460 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>GoRide – Đặt xe nhanh</title>
+  <title>GoRide</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=Roboto+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=Roboto+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-
     :root{
-      --bg-from:#eef2ff;
-      --bg-to:#f0fdf4;
-      --white:#ffffff;
-      --card-bg:#ffffff;
-      --border:#e2e8f0;
-      --border-focus:#93c5fd;
-      --accent:#2563eb;
-      --accent-dk:#1d4ed8;
-      --accent-light:#eff6ff;
-      --accent-mid:#bfdbfe;
-      --text:#0f172a;
-      --sub:#475569;
-      --muted:#94a3b8;
-      --green:#059669;
-      --green-bg:#ecfdf5;
-      --amber:#b45309;
-      --amber-bg:#fffbeb;
+      --bg-from:#eef2ff;--bg-to:#f0fdf4;--white:#fff;
+      --border:#e2e8f0;--border2:#cbd5e1;--border-f:#93c5fd;
+      --accent:#2563eb;--accent-dk:#1d4ed8;--accent-light:#eff6ff;--accent-mid:#bfdbfe;
+      --text:#0f172a;--sub:#475569;--muted:#94a3b8;
+      --green:#059669;--green-bg:#ecfdf5;
+      --amber:#b45309;--amber-bg:#fffbeb;
       --red:#dc2626;
-      --sh1:0 1px 4px rgba(15,23,42,.06);
-      --sh2:0 4px 20px rgba(15,23,42,.09);
-      --sh3:0 8px 40px rgba(15,23,42,.13);
+      --sh:0 1px 4px rgba(15,23,42,.07);--sh2:0 4px 20px rgba(15,23,42,.10);--sh3:0 8px 40px rgba(15,23,42,.14);
     }
-
-    html,body{
-      height:100%;
-      font-family:'Inter',sans-serif;
-      background:linear-gradient(160deg,var(--bg-from) 0%,var(--bg-to) 100%);
-      color:var(--text);
-      overflow:hidden;
-    }
-
-    /* ─── PHONE SHELL ─── */
-    .shell{
-      position:fixed;inset:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:20px;
-    }
-
-    /* The phone "screen" — 9:19 ratio */
-    .phone{
-      position:relative;
-      width:min(390px, calc(100vh * 9/19));
-      height:min(calc(390px * 19/9), calc(100vh - 40px));
-      background:var(--card-bg);
-      border-radius:44px;
-      box-shadow:
-        0 0 0 10px #1e293b,
-        0 0 0 12px #334155,
-        0 30px 80px rgba(15,23,42,.35);
-      overflow:hidden;
-      display:flex;
-      flex-direction:column;
-    }
-
-    /* Notch */
-    .notch{
-      position:absolute;top:0;left:50%;transform:translateX(-50%);
-      width:120px;height:34px;
-      background:#1e293b;
-      border-radius:0 0 22px 22px;
-      z-index:100;
-      display:flex;align-items:center;justify-content:center;gap:8px;
-    }
+    html,body{height:100%;font-family:'Inter',sans-serif;background:linear-gradient(160deg,var(--bg-from) 0%,var(--bg-to) 100%);color:var(--text);overflow:hidden;display:flex;align-items:center;justify-content:center}
+    .shell{padding:20px;display:flex;align-items:center;justify-content:center;width:100%;height:100%}
+    .phone{position:relative;width:min(390px,calc(100vh*9/19));height:min(calc(390px*19/9),calc(100vh - 40px));background:var(--white);border-radius:44px;box-shadow:0 0 0 10px #1e293b,0 0 0 12px #334155,0 30px 80px rgba(15,23,42,.35);overflow:hidden;display:flex;flex-direction:column}
+    .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:34px;background:#1e293b;border-radius:0 0 22px 22px;z-index:100;display:flex;align-items:center;justify-content:center;gap:8px}
     .notch-cam{width:12px;height:12px;border-radius:50%;background:#0f172a;border:2px solid #334155}
     .notch-speaker{width:44px;height:5px;border-radius:10px;background:#0f172a}
-
-    /* Status bar */
-    .status-bar{
-      height:44px;
-      padding:0 24px;
-      display:flex;align-items:flex-end;justify-content:space-between;
-      padding-bottom:6px;
-      flex-shrink:0;
-    }
-    .status-time{
-      font-family:'Inter',sans-serif;
-      font-weight:600;font-size:15px;color:var(--text);
-      letter-spacing:-.2px;
-    }
+    .status-bar{height:44px;padding:0 22px;display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:6px;flex-shrink:0}
+    .status-time{font-family:'Inter',sans-serif;font-weight:600;font-size:15px;color:var(--text)}
     .status-icons{display:flex;align-items:center;gap:5px;color:var(--text);font-size:12px}
-
-    /* Scrollable content */
-    .screen{
-      flex:1;
-      overflow-y:auto;
-      overflow-x:hidden;
-      scrollbar-width:none;
-      padding:0 18px 24px;
-    }
+    .screen{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding:0 16px 20px}
     .screen::-webkit-scrollbar{display:none}
 
-    /* ─── LOGO ROW ─── */
-    .logo-row{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:10px 0 16px;
-    }
-    .logo-left{display:flex;align-items:center;gap:10px}
-    .logo-icon{
-      width:38px;height:38px;
-      background:linear-gradient(135deg,#2563eb,#06b6d4);
-      border-radius:12px;
-      display:flex;align-items:center;justify-content:center;
-      font-size:19px;
-      box-shadow:0 3px 12px rgba(37,99,235,.3);
-    }
-    .logo-text{
-      font-family:'Plus Jakarta Sans',sans-serif;
-      font-weight:800;font-size:21px;letter-spacing:-.5px;
-      color:var(--text);
-    }
-    .live-pill{
-      display:flex;align-items:center;gap:5px;
-      padding:5px 11px;
-      background:var(--green-bg);
-      border:1px solid #a7f3d0;
-      border-radius:20px;
-      font-size:12px;font-weight:600;color:var(--green);
-    }
-    .live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.8s ease-in-out infinite}
+    /* LOGO */
+    .logo-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0 14px}
+    .logo-left{display:flex;align-items:center;gap:9px}
+    .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#2563eb,#06b6d4);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 3px 12px rgba(37,99,235,.3)}
+    .logo-text{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:20px;letter-spacing:-.5px;color:var(--text)}
+    .live-pill{display:flex;align-items:center;gap:5px;padding:5px 11px;background:var(--green-bg);border:1px solid #a7f3d0;border-radius:20px;font-size:12px;font-weight:600;color:var(--green)}
+    .ldot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.8s ease-in-out infinite}
     @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    .greeting{margin-bottom:16px}
+    .greeting-sub{font-size:13px;color:var(--muted);margin-bottom:2px}
+    .greeting-main{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:19px;color:var(--text);letter-spacing:-.3px}
 
-    /* ─── GREETING ─── */
-    .greeting{margin-bottom:18px}
-    .greeting-sub{font-size:13px;color:var(--muted);font-weight:400;margin-bottom:2px}
-    .greeting-main{
-      font-family:'Plus Jakarta Sans',sans-serif;
-      font-weight:700;font-size:20px;color:var(--text);letter-spacing:-.3px;
-    }
-
-    /* ─── BOOKING CARD ─── */
-    .booking-card{
-      background:var(--white);
-      border:1px solid var(--border);
-      border-radius:20px;
-      padding:16px;
-      box-shadow:var(--sh3);
-      margin-bottom:14px;
-    }
-    .section-label{
-      font-size:11px;font-weight:600;
-      letter-spacing:.08em;text-transform:uppercase;
-      color:var(--muted);margin-bottom:12px;
-    }
-
-    /* INPUTS */
+    /* BOOKING CARD */
+    .booking-card{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:15px;box-shadow:var(--sh3);margin-bottom:13px}
+    .sec-label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:11px}
     .input-group{position:relative}
-    .input-row{
-      display:flex;align-items:center;gap:10px;
-      padding:13px 13px;
-      background:#f8fafc;
-      border:1.5px solid var(--border);
-      transition:border-color .18s,background .18s;
-      cursor:text;
-    }
-    .input-row:first-child{border-radius:13px 13px 0 0;border-bottom-color:transparent}
-    .input-row:last-of-type{border-radius:0 0 13px 13px}
-    .input-row:hover{background:#f0f9ff;border-color:var(--border-focus)}
+    .input-row{display:flex;align-items:center;gap:10px;padding:12px 12px;background:#f8fafc;border:1.5px solid var(--border);transition:border-color .18s,background .18s;cursor:text}
+    .input-row:first-child{border-radius:12px 12px 0 0;border-bottom-color:transparent}
+    .input-row:last-of-type{border-radius:0 0 12px 12px}
+    .input-row:hover{background:#f0f9ff;border-color:var(--border-f)}
     .input-row:focus-within{background:var(--accent-light);border-color:var(--accent)!important}
-
     .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
     .dot-green{background:var(--green);box-shadow:0 0 0 3px rgba(5,150,105,.15)}
     .dot-blue{background:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
-
-    .ifield{
-      flex:1;background:none;border:none;outline:none;
-      color:var(--text);
-      font-family:'Inter',sans-serif;
-      font-size:14px;
-      caret-color:var(--accent);
-    }
+    .ifield{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;caret-color:var(--accent)}
     .ifield::placeholder{color:var(--muted)}
-    .xbtn{
-      width:20px;height:20px;border-radius:50%;
-      background:var(--border);border:none;
-      color:var(--sub);font-size:11px;
-      cursor:pointer;display:flex;align-items:center;justify-content:center;
-      opacity:0;transition:opacity .15s;flex-shrink:0;
-    }
-
-    /* Connector */
-    .connector{height:22px;position:relative;display:flex;align-items:center;padding-left:18px}
-    .v-line{position:absolute;left:18px;top:0;bottom:0;width:1.5px;background:linear-gradient(to bottom,var(--green),var(--accent));opacity:.35}
-    .swap-btn{
-      position:absolute;right:10px;top:50%;transform:translateY(-50%);
-      width:28px;height:28px;
-      background:var(--white);border:1.5px solid var(--border);
-      border-radius:8px;color:var(--sub);
-      cursor:pointer;display:flex;align-items:center;justify-content:center;
-      font-size:14px;transition:border-color .18s,color .18s,transform .3s;
-      box-shadow:var(--sh1);
-    }
+    .xbtn{width:20px;height:20px;border-radius:50%;background:var(--border);border:none;color:var(--sub);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;flex-shrink:0}
+    .connector{height:22px;position:relative;display:flex;align-items:center;padding-left:17px}
+    .v-line{position:absolute;left:17px;top:0;bottom:0;width:1.5px;background:linear-gradient(to bottom,var(--green),var(--accent));opacity:.35}
+    .swap-btn{position:absolute;right:9px;top:50%;transform:translateY(-50%);width:28px;height:28px;background:var(--white);border:1.5px solid var(--border2);border-radius:8px;color:var(--sub);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:border-color .18s,color .18s,transform .3s;box-shadow:var(--sh)}
     .swap-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-50%) rotate(180deg)}
 
-    /* ─── VEHICLE TYPES ─── */
-    .vtypes{display:flex;gap:8px;margin-top:13px}
-    .vtype{
-      flex:1;padding:10px 5px;
-      background:#f8fafc;
-      border:1.5px solid var(--border);
-      border-radius:13px;cursor:pointer;text-align:center;
-      transition:all .18s;user-select:none;
-    }
-    .vtype:hover{border-color:var(--border-focus);background:var(--accent-light)}
+    /* VEHICLE TYPES */
+    .vtypes{display:flex;gap:7px;margin-top:12px}
+    .vtype{flex:1;padding:9px 5px;background:#f8fafc;border:1.5px solid var(--border);border-radius:12px;cursor:pointer;text-align:center;transition:all .18s;user-select:none}
+    .vtype:hover{border-color:var(--border-f);background:var(--accent-light)}
     .vtype.active{border-color:var(--accent);background:var(--accent-light)}
-    .vtype-icon{font-size:20px;display:block;margin-bottom:3px}
-    .vtype-name{font-size:11px;font-weight:600;color:var(--sub);line-height:1.2}
-    .vtype-price{
-      /* ── READABLE MONEY FONT ── */
-      font-family:'Roboto Mono',monospace;
-      font-size:10px;font-weight:600;
-      color:var(--muted);margin-top:3px;
-      letter-spacing:-.3px;
-    }
-    .vtype.active .vtype-name{color:var(--accent)}
-    .vtype.active .vtype-price{color:var(--accent)}
+    .vtype-icon{font-size:19px;display:block;margin-bottom:2px}
+    .vtype-name{font-size:11px;font-weight:600;color:var(--sub)}
+    .vtype-price{font-family:'Roboto Mono',monospace;font-size:10px;font-weight:600;color:var(--muted);margin-top:2px}
+    .vtype.active .vtype-name,.vtype.active .vtype-price{color:var(--accent)}
 
-    /* ─── PRICE BOX ─── */
-    .price-box{
-      display:none;margin-top:13px;
-      background:linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%);
-      border:1.5px solid var(--accent-mid);
-      border-radius:16px;
-      overflow:hidden;
-      animation:fadeUp .3s ease both;
-    }
+    /* VOUCHER */
+    .voucher-row{display:flex;gap:7px;margin-top:12px;align-items:center}
+    .voucher-input{flex:1;height:38px;padding:0 12px;border:1.5px solid var(--border);border-radius:10px;font-family:'Roboto Mono',monospace;font-size:13px;font-weight:600;letter-spacing:.08em;outline:none;background:#f8fafc;color:var(--text);text-transform:uppercase;transition:border-color .18s}
+    .voucher-input:focus{border-color:var(--accent);background:var(--accent-light)}
+    .voucher-input::placeholder{text-transform:none;font-family:'Inter',sans-serif;font-weight:400;font-size:12px;letter-spacing:0;color:var(--muted)}
+    .voucher-apply{height:38px;padding:0 14px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap}
+    .voucher-apply:hover{background:var(--accent-dk)}
+    .voucher-msg{font-size:11px;margin-top:5px;padding:5px 10px;border-radius:8px;display:none}
+    .voucher-msg.ok{background:var(--green-bg);color:var(--green);display:block}
+    .voucher-msg.err{background:#fff1f2;color:var(--red);display:block}
+
+    /* PRICE BOX */
+    .price-box{display:none;margin-top:12px;background:linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%);border:1.5px solid var(--accent-mid);border-radius:15px;overflow:hidden;animation:fadeUp .3s ease both}
     @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-
-    .price-header{
-      padding:12px 14px 10px;
-      border-bottom:1px solid rgba(37,99,235,.1);
-      display:flex;align-items:center;justify-content:space-between;
-    }
-    .price-left-col{display:flex;align-items:baseline;gap:4px}
-
-    /* BIG PRICE NUMBER — easy to read */
-    .price-big{
-      font-family:'Roboto Mono',monospace;
-      font-size:28px;font-weight:600;
-      color:var(--accent);letter-spacing:-1px;
-      line-height:1;
-    }
-    .price-unit-label{
-      font-family:'Inter',sans-serif;
-      font-size:14px;font-weight:600;
-      color:var(--sub);
-    }
-    .demand-tag{
-      padding:3px 10px;border-radius:20px;
-      font-size:11px;font-weight:600;
-      background:var(--amber-bg);color:var(--amber);
-      border:1px solid #fde68a;
-      white-space:nowrap;
-    }
-    .demand-tag.low{background:var(--green-bg);color:var(--green);border-color:#a7f3d0}
-
-    .price-body{padding:10px 14px 12px;display:flex;flex-direction:column;gap:5px}
-    .pr{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+    .ph{padding:10px 13px 9px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .price-main{display:flex;align-items:baseline;gap:2px}
+    .price-big{font-family:'Roboto Mono',monospace;font-size:24px;font-weight:700;color:var(--accent);letter-spacing:-1px;line-height:1}
+    .price-unit{font-size:12px;font-weight:600;color:var(--sub)}
+    .surge-tag{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;background:var(--amber-bg);color:var(--amber);border:1px solid #fde68a;white-space:nowrap}
+    .surge-tag.low{background:var(--green-bg);color:var(--green);border-color:#a7f3d0}
+    /* Inline meta row under big price */
+    .price-meta{display:flex;align-items:center;gap:8px;margin-top:1px;flex-wrap:wrap}
+    .price-meta-chip{font-family:'Roboto Mono',monospace;font-size:10px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:3px}
+    .pb{padding:6px 13px 8px;display:flex;flex-direction:column;gap:3px}
+    .pr{display:flex;justify-content:space-between;align-items:center;font-size:11px}
     .pr-label{color:var(--muted)}
-    .pr-val{
-      font-family:'Roboto Mono',monospace;
-      font-size:12px;font-weight:600;
-      color:var(--sub);letter-spacing:-.3px;
-    }
-    .pr-divider{height:1px;background:rgba(37,99,235,.1);margin:3px 0}
-    .pr.bold .pr-label{color:var(--text);font-weight:600;font-family:'Inter',sans-serif}
-    .pr.bold .pr-val{
-      font-family:'Roboto Mono',monospace;
-      font-size:13px;font-weight:700;
-      color:var(--accent);
-    }
-    .price-note{
-      padding:0 14px 10px;
-      font-size:10px;color:var(--muted);
-    }
+    .pr-val{font-family:'Roboto Mono',monospace;font-size:11px;font-weight:600;color:var(--sub);letter-spacing:-.3px}
+    .pr-divider{height:1px;background:rgba(37,99,235,.1);margin:2px 0}
+    .pr.total .pr-label{color:var(--text);font-weight:600;font-size:12px;font-family:'Inter',sans-serif}
+    .pr.total .pr-val{font-size:13px;font-weight:700;color:var(--accent)}
+    .pr.discount .pr-val{color:var(--green)}
+    .price-note{padding:0 13px 7px;font-size:10px;color:var(--muted)}
 
-    /* ─── QUICK CHIPS ─── */
-    .chips{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;padding-bottom:1px}
+    /* CHIPS */
+    .chips{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin-bottom:13px;padding-bottom:1px}
     .chips::-webkit-scrollbar{display:none}
-    .chip{
-      flex-shrink:0;padding:6px 12px;
-      background:var(--white);border:1px solid var(--border);
-      border-radius:20px;font-size:12px;color:var(--sub);
-      cursor:pointer;white-space:nowrap;
-      transition:all .15s;box-shadow:var(--sh1);
-    }
+    .chip{flex-shrink:0;padding:6px 11px;background:var(--white);border:1px solid var(--border);border-radius:20px;font-size:12px;color:var(--sub);cursor:pointer;white-space:nowrap;transition:all .15s;box-shadow:var(--sh)}
     .chip:hover{background:var(--accent-light);border-color:var(--accent-mid);color:var(--accent)}
 
-    /* ─── PROMO CARD ─── */
-    .promo-card{
-      background:linear-gradient(135deg,#2563eb 0%,#06b6d4 100%);
-      border-radius:16px;padding:14px 16px;
-      margin-bottom:14px;
-      display:flex;align-items:center;justify-content:space-between;
-      box-shadow:0 4px 16px rgba(37,99,235,.25);
-    }
-    .promo-text{color:rgba(255,255,255,.85);font-size:12px;margin-bottom:3px}
-    .promo-title{color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px}
-    .promo-badge{
-      background:rgba(255,255,255,.2);
-      border:1px solid rgba(255,255,255,.3);
-      border-radius:10px;padding:6px 10px;
-      color:#fff;font-family:'Roboto Mono',monospace;
-      font-size:14px;font-weight:600;
-      letter-spacing:.5px;
-    }
+    /* PROMO */
+    .promo-card{background:linear-gradient(135deg,#2563eb 0%,#06b6d4 100%);border-radius:15px;padding:13px 15px;margin-bottom:13px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 14px rgba(37,99,235,.25);cursor:pointer}
+    .promo-text{color:rgba(255,255,255,.8);font-size:11px;margin-bottom:2px}
+    .promo-title{color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px}
+    .promo-badge{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:9px;padding:5px 9px;color:#fff;font-family:'Roboto Mono',monospace;font-size:13px;font-weight:700;letter-spacing:.5px}
 
-    /* ─── GO BUTTON ─── */
-    .go-btn{
-      width:100%;height:52px;
-      background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);
-      border:none;border-radius:16px;
-      color:#fff;
-      font-family:'Plus Jakarta Sans',sans-serif;
-      font-size:15px;font-weight:700;
-      cursor:pointer;
-      display:flex;align-items:center;justify-content:center;gap:8px;
-      box-shadow:0 4px 18px rgba(37,99,235,.32);
-      transition:all .18s;
-      margin-top:14px;
-    }
-    .go-btn:hover{box-shadow:0 6px 24px rgba(37,99,235,.42);transform:translateY(-1px)}
+    /* GO BTN */
+    .go-btn{width:100%;height:50px;background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);border:none;border-radius:15px;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(37,99,235,.3);transition:all .18s;margin-top:13px}
+    .go-btn:hover{box-shadow:0 6px 22px rgba(37,99,235,.4);transform:translateY(-1px)}
     .go-btn:active{transform:scale(.98)}
     .go-btn:disabled{background:#94a3b8;box-shadow:none;cursor:not-allowed;transform:none}
-    .spinner{display:none;width:19px;height:19px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite}
+    .spinner{display:none;width:18px;height:18px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
-
-    /* ─── HOME INDICATOR ─── */
-    .home-indicator{
-      height:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-    }
-    .home-bar{width:120px;height:5px;background:#1e293b;border-radius:3px;opacity:.15}
+    .home-indicator{height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .home-bar{width:110px;height:5px;background:#1e293b;border-radius:3px;opacity:.14}
   </style>
 </head>
 <body>
-
-<div class="shell">
-  <div class="phone">
-
-    <!-- Notch -->
-    <div class="notch">
-      <div class="notch-cam"></div>
-      <div class="notch-speaker"></div>
+<div class="shell"><div class="phone">
+  <div class="notch"><div class="notch-cam"></div><div class="notch-speaker"></div></div>
+  <div class="status-bar">
+    <span class="status-time" id="clk">--:--</span>
+    <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+  </div>
+  <div class="screen">
+    <div class="logo-row">
+      <div class="logo-left"><div class="logo-icon">🛵</div><span class="logo-text">GoRide</span></div>
+      <div class="live-pill"><div class="ldot"></div>Trực tuyến</div>
+    </div>
+    <div class="greeting">
+      <div class="greeting-sub">Xin chào 👋</div>
+      <div class="greeting-main">Bạn muốn đi đâu hôm nay?</div>
     </div>
 
-    <!-- Status bar -->
-    <div class="status-bar">
-      <span class="status-time" id="clk">--:--</span>
-      <div class="status-icons">
-        <span>●●●</span>
-        <span>WiFi</span>
-        <span>🔋</span>
-      </div>
-    </div>
-
-    <!-- Scrollable screen -->
-    <div class="screen">
-
-      <!-- Logo -->
-      <div class="logo-row">
-        <div class="logo-left">
-          <div class="logo-icon">🛵</div>
-          <span class="logo-text">GoRide</span>
+    <div class="booking-card">
+      <div class="sec-label">Nhập địa điểm</div>
+      <div class="input-group">
+        <div class="input-row" onclick="this.querySelector('input').focus()">
+          <div class="dot dot-green"></div>
+          <input class="ifield" id="pickup" type="text" placeholder="Điểm đón của bạn..." autocomplete="off"
+            oninput="toggleX(this,'x1');schedulePrice()"/>
+          <button class="xbtn" id="x1" type="button" onclick="clearF('pickup','x1')">✕</button>
         </div>
-        <div class="live-pill">
-          <div class="live-dot"></div>
-          Trực tuyến
+        <div class="connector"><div class="v-line"></div>
+          <button class="swap-btn" type="button" onclick="swapInputs()">⇅</button>
+        </div>
+        <div class="input-row" onclick="this.querySelector('input').focus()">
+          <div class="dot dot-blue"></div>
+          <input class="ifield" id="destination" type="text" placeholder="Bạn muốn đến đâu?" autocomplete="off"
+            oninput="toggleX(this,'x2');schedulePrice()"/>
+          <button class="xbtn" id="x2" type="button" onclick="clearF('destination','x2')">✕</button>
         </div>
       </div>
 
-      <!-- Greeting -->
-      <div class="greeting">
-        <div class="greeting-sub">Xin chào 👋</div>
-        <div class="greeting-main">Bạn muốn đi đâu hôm nay?</div>
+      <!-- Vehicle types -->
+      <div class="vtypes">
+        <div class="vtype active" onclick="selectVtype('bike',this)">
+          <span class="vtype-icon">🛵</span><div class="vtype-name">Xe máy</div>
+          <div class="vtype-price" id="vp-bike">--</div>
+        </div>
+        <div class="vtype" onclick="selectVtype('car4',this)">
+          <span class="vtype-icon">🚗</span><div class="vtype-name">4 chỗ</div>
+          <div class="vtype-price" id="vp-car4">--</div>
+        </div>
+        <div class="vtype" onclick="selectVtype('car7',this)">
+          <span class="vtype-icon">🚐</span><div class="vtype-name">7 chỗ</div>
+          <div class="vtype-price" id="vp-car7">--</div>
+        </div>
       </div>
 
-      <!-- Booking card -->
-      <div class="booking-card">
-        <div class="section-label">Nhập địa điểm</div>
+      <!-- VOUCHER INPUT -->
+      <div class="voucher-row">
+        <input class="voucher-input" id="voucherInput" type="text" placeholder="🎟 Nhập mã voucher..." maxlength="20"
+          oninput="this.value=this.value.toUpperCase();clearVoucherMsg()"/>
+        <button class="voucher-apply" onclick="applyVoucher()">Áp dụng</button>
+      </div>
+      <div class="voucher-msg" id="voucherMsg"></div>
 
-        <div class="input-group">
-          <div class="input-row" onclick="this.querySelector('input').focus()">
-            <div class="dot dot-green"></div>
-            <input class="ifield" id="pickup" type="text"
-              placeholder="Điểm đón của bạn..."
-              autocomplete="off"
-              oninput="toggleX(this,'x1');schedulePrice()"
-            />
-            <button class="xbtn" id="x1" type="button" onclick="clearF('pickup','x1')">✕</button>
-          </div>
-          <div class="connector">
-            <div class="v-line"></div>
-            <button class="swap-btn" type="button" onclick="swapInputs()">⇅</button>
-          </div>
-          <div class="input-row" onclick="this.querySelector('input').focus()">
-            <div class="dot dot-blue"></div>
-            <input class="ifield" id="destination" type="text"
-              placeholder="Bạn muốn đến đâu?"
-              autocomplete="off"
-              oninput="toggleX(this,'x2');schedulePrice()"
-            />
-            <button class="xbtn" id="x2" type="button" onclick="clearF('destination','x2')">✕</button>
-          </div>
-        </div>
-
-        <!-- Vehicle types -->
-        <div class="vtypes">
-          <div class="vtype active" onclick="selectVtype('bike',this)">
-            <span class="vtype-icon">🛵</span>
-            <div class="vtype-name">Xe máy</div>
-            <div class="vtype-price" id="vp-bike">--</div>
-          </div>
-          <div class="vtype" onclick="selectVtype('car4',this)">
-            <span class="vtype-icon">🚗</span>
-            <div class="vtype-name">4 chỗ</div>
-            <div class="vtype-price" id="vp-car4">--</div>
-          </div>
-          <div class="vtype" onclick="selectVtype('car7',this)">
-            <span class="vtype-icon">🚐</span>
-            <div class="vtype-name">7 chỗ</div>
-            <div class="vtype-price" id="vp-car7">--</div>
-          </div>
-        </div>
-
-        <!-- Price breakdown -->
-        <div class="price-box" id="priceBox">
-          <div class="price-header">
-            <div class="price-left-col">
+      <!-- Price box — compact: chỉ giá + km/phút + voucher + tổng -->
+      <div class="price-box" id="priceBox">
+        <div class="ph">
+          <div>
+            <div class="price-main">
               <span class="price-big" id="priceNum">--</span>
-              <span class="price-unit-label">₫</span>
+              <span class="price-unit">₫</span>
             </div>
-            <span class="demand-tag" id="demandBadge">--</span>
-          </div>
-          <div class="price-body">
-            <div class="pr">
-              <span class="pr-label">📏 Khoảng cách</span>
-              <span class="pr-val" id="prKm">-- km</span>
-            </div>
-            <div class="pr">
-              <span class="pr-label">⏱ Thời gian</span>
-              <span class="pr-val" id="prTime">-- phút</span>
-            </div>
-            <div class="pr">
-              <span class="pr-label">🚦 Phụ phí nhu cầu</span>
-              <span class="pr-val" id="prSur">--</span>
-            </div>
-            <div class="pr-divider"></div>
-            <div class="pr bold">
-              <span class="pr-label">💳 Tổng cộng</span>
-              <span class="pr-val" id="prTotal">--</span>
+            <div class="price-meta">
+              <span class="price-meta-chip">📏 <span id="prKm">--</span></span>
+              <span class="price-meta-chip" style="color:var(--border2)">|</span>
+              <span class="price-meta-chip">⏱ <span id="prTime">--</span></span>
             </div>
           </div>
-          <div class="price-note">* Giá ước tính – tài xế xác nhận giá cuối khi nhận chuyến</div>
+          <span class="surge-tag" id="surgeTag">--</span>
         </div>
-
-        <!-- Submit -->
-        <form method="POST" action="/" onsubmit="return handleSubmit(event)">
-          <input type="hidden" id="f_pickup" name="pickup"/>
-          <input type="hidden" id="f_dest"   name="destination"/>
-          <input type="hidden" id="f_vtype"  name="vehicle_type" value="bike"/>
-          <button type="submit" class="go-btn" id="goBtn">
-            <div class="spinner" id="spin"></div>
-            <span id="btnTxt">🔍 &nbsp;Tìm tài xế ngay</span>
-          </button>
-        </form>
-      </div>
-
-      <!-- Quick chips -->
-      <div class="chips">
-        <div class="chip" onclick="fill('destination','Sân bay Tân Sơn Nhất, TP.HCM')">✈ Sân bay TSN</div>
-        <div class="chip" onclick="fill('destination','Bến Thành, Quận 1, TP.HCM')">🏢 Bến Thành</div>
-        <div class="chip" onclick="fill('destination','Landmark 81, Bình Thạnh')">🏙 Landmark 81</div>
-        <div class="chip" onclick="fill('destination','Vincom Đồng Khởi, Quận 1')">🛍 Vincom</div>
-        <div class="chip" onclick="fill('destination','Phú Mỹ Hưng, Quận 7')">🌆 Phú Mỹ Hưng</div>
-      </div>
-
-      <!-- Promo banner -->
-      <div class="promo-card">
-        <div>
-          <div class="promo-text">Ưu đãi hôm nay</div>
-          <div class="promo-title">Giảm 20% chuyến đầu tiên 🎉</div>
+        <div class="pb">
+          <div class="pr discount" id="rowVoucher" style="display:none">
+            <span class="pr-label">🎟 Voucher giảm</span>
+            <span class="pr-val" id="prVoucher">--</span>
+          </div>
+          <div class="pr-divider"></div>
+          <div class="pr total">
+            <span class="pr-label">💳 Thanh toán</span>
+            <span class="pr-val" id="prTotal">--</span>
+          </div>
         </div>
-        <div class="promo-badge">FIRST20</div>
+        <!-- stubs for JS -->
+        <span id="prBase" style="display:none"></span><span id="prSurge" style="display:none"></span>
+        <span id="prNight" style="display:none"></span><span id="prRain" style="display:none"></span>
+        <span id="prPickup" style="display:none"></span><span id="prRegion" style="display:none"></span>
+        <span id="prEarn" style="display:none"></span><span id="rowNight" style="display:none"></span>
+        <span id="rowRain" style="display:none"></span><span id="rowPickup" style="display:none"></span>
+        <div class="price-note">Chi tiết xem Dashboard</div>
       </div>
 
-    </div><!-- /screen -->
+      <form method="POST" action="/" onsubmit="return handleSubmit(event)">
+        <input type="hidden" id="f_pickup" name="pickup"/>
+        <input type="hidden" id="f_dest"   name="destination"/>
+        <input type="hidden" id="f_vtype"  name="vehicle_type" value="bike"/>
+        <input type="hidden" id="f_voucher" name="voucher_code"/>
+        <button type="submit" class="go-btn" id="goBtn">
+          <div class="spinner" id="spin"></div>
+          <span id="btnTxt">🔍 &nbsp;Tìm tài xế ngay</span>
+        </button>
+      </form>
+    </div>
 
-    <!-- Home indicator -->
-    <div class="home-indicator"><div class="home-bar"></div></div>
+    <!-- Quick chips -->
+    <div class="chips">
+      <div class="chip" onclick="fill('destination','Sân bay Tân Sơn Nhất, TP.HCM')">✈ Sân bay TSN</div>
+      <div class="chip" onclick="fill('destination','Bến Thành, Quận 1, TP.HCM')">🏢 Bến Thành</div>
+      <div class="chip" onclick="fill('destination','Landmark 81, Bình Thạnh')">🏙 Landmark 81</div>
+      <div class="chip" onclick="fill('destination','Vincom Đồng Khởi, Quận 1')">🛍 Vincom</div>
+      <div class="chip" onclick="fill('destination','Phú Mỹ Hưng, Quận 7')">🌆 Phú Mỹ Hưng</div>
+    </div>
 
-  </div><!-- /phone -->
-</div><!-- /shell -->
+    <!-- Promo -->
+    <div class="promo-card" onclick="fillVoucher('TETHOLIDAY')">
+      <div><div class="promo-text">Ưu đãi hôm nay 🎉</div><div class="promo-title">Mừng Tết — Giảm 25%</div></div>
+      <div class="promo-badge">TETHOLIDAY</div>
+    </div>
+    <div class="promo-card" onclick="fillVoucher('NEWUSER')" style="background:linear-gradient(135deg,#059669,#0891b2)">
+      <div><div class="promo-text">Khách mới 🛵</div><div class="promo-title">Chuyến đầu giảm 30%</div></div>
+      <div class="promo-badge">NEWUSER</div>
+    </div>
+
+  </div><!-- /screen -->
+  <div class="home-indicator"><div class="home-bar"></div></div>
+</div></div>
 
 <script>
-/* CLOCK */
-function updateClock(){
-  const n=new Date();
-  document.getElementById('clk').textContent=
-    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
-}
-updateClock(); setInterval(updateClock,30000);
+/* ─── Clock ─── */
+function updateClock(){var n=new Date();document.getElementById('clk').textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')}
+updateClock();setInterval(updateClock,30000);
 
-/* INPUT HELPERS */
+/* ─── Input helpers ─── */
 function toggleX(el,id){document.getElementById(id).style.opacity=el.value?'1':'0'}
 function clearF(fid,xid){document.getElementById(fid).value='';document.getElementById(xid).style.opacity='0';schedulePrice()}
-function fill(fid,val){
-  document.getElementById(fid).value=val;
-  document.getElementById(fid==='pickup'?'x1':'x2').style.opacity='1';
-  schedulePrice();
-}
+function fill(fid,val){document.getElementById(fid).value=val;document.getElementById(fid==='pickup'?'x1':'x2').style.opacity='1';schedulePrice()}
 function swapInputs(){
-  const p=document.getElementById('pickup'),d=document.getElementById('destination');
+  var p=document.getElementById('pickup'),d=document.getElementById('destination');
   [p.value,d.value]=[d.value,p.value];
   document.getElementById('x1').style.opacity=p.value?'1':'0';
   document.getElementById('x2').style.opacity=d.value?'1':'0';
   schedulePrice();
 }
 
-/* VEHICLE */
-const RATES={bike:{base:15000,perKm:9500,min:15000},car4:{base:25000,perKm:16500,min:30000},car7:{base:35000,perKm:20000,min:45000}};
-let curVtype='bike';
-function selectVtype(type,el){
-  document.querySelectorAll('.vtype').forEach(v=>v.classList.remove('active'));
-  el.classList.add('active');
-  curVtype=type;
-  document.getElementById('f_vtype').value=type;
+/* ─── Vehicle ─── */
+var RATES={
+  bike:{open:13000,perKm:4500,waitMin:500,min:13000},
+  car4:{open:22000,perKm:9000,waitMin:800,min:22000},
+  car7:{open:32000,perKm:12000,waitMin:1000,min:32000}
+};
+var curVtype='bike';
+function selectVtype(t,el){
+  document.querySelectorAll('.vtype').forEach(function(v){v.classList.remove('active')});
+  el.classList.add('active');curVtype=t;
+  document.getElementById('f_vtype').value=t;
   renderPrice();
 }
 
-/* GEOCODE */
-const geoCache={};
+/* ─── Voucher ─── */
+var voucherDisc=0,voucherApplied='';
+function fillVoucher(code){
+  document.getElementById('voucherInput').value=code;
+  applyVoucher();
+}
+function clearVoucherMsg(){
+  if(!document.getElementById('voucherInput').value){
+    voucherDisc=0;voucherApplied='';
+    document.getElementById('voucherMsg').className='voucher-msg';
+    renderPrice();
+  }
+}
+function applyVoucher(){
+  var code=document.getElementById('voucherInput').value.trim().toUpperCase();
+  if(!code) return;
+  var fare=priceState?calcFare(priceState.sKm,curVtype).fare:0;
+  fetch('/api/check_voucher',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({code:code,fare:fare})
+  }).then(function(r){return r.json()}).then(function(d){
+    var msg=document.getElementById('voucherMsg');
+    if(d.valid){
+      voucherDisc=d.discount;voucherApplied=code;
+      msg.textContent='✅ '+d.description+' — Giảm '+fmt(d.discount)+'₫';
+      msg.className='voucher-msg ok';
+    } else {
+      voucherDisc=0;voucherApplied='';
+      msg.textContent='❌ '+d.description;
+      msg.className='voucher-msg err';
+    }
+    renderPrice();
+  });
+}
+
+/* ─── Fuzzy surge (client preview) ─── */
+function tri(x,a,b,c){if(x<=a||x>=c)return 0;return x<=b?(x-a)/(b-a):(c-x)/(c-b)}
+function trap(x,a,b,c,d){if(x<=a||x>=d)return 0;if(x<=b)return(x-a)/(b-a);if(x<=c)return 1;return(d-x)/(d-c)}
+function fuzzySurge(h,dow){
+  var m=tri(h,6.5,8,9.5),e=tri(h,16.5,18,20),n=Math.min(1,trap(h,22,23,24,24)+trap(h,0,0,1,2));
+  var wk=dow>=5?0.25:0;
+  var rules=[[m,1.55],[e,1.60],[n*.8,1.25],[wk,1.20],[Math.max(m,e)*wk,1.80]];
+  var base=Math.max(m,e,n*.7);rules.push([1-base,1.0]);
+  var tw=rules.reduce(function(s,r){return s+r[0]},0);
+  var surge=tw>0?rules.reduce(function(s,r){return s+r[0]*r[1]},0)/tw:1;
+  return Math.min(1.8,Math.max(1.0,surge));
+}
+
+/* ─── Fare calc ─── */
+function circuity(km){return km<2?1.5:km<5?1.38:km<10?1.28:1.22}
+function calcFare(sKm,type){
+  var roadKm=sKm*circuity(sKm);
+  var r=RATES[type];
+  var now=new Date(),h=now.getHours()+now.getMinutes()/60,dow=(now.getDay()+6)%7;
+  var surge=fuzzySurge(h,dow);
+  var extraKm=Math.max(0,roadKm-2);
+  var base=r.open+extraKm*r.perKm;
+  base=Math.max(base,r.min);
+  var surgeFee=base*(surge-1);
+  var nightFee=(h>=22||h<5)?base*.12:0;
+  var rainFee=0;  // weather unknown on client
+  var pickFee=sKm>4?10000:sKm>2?5000:0; // rough estimate
+  var regionDisc=(base+surgeFee+nightFee+pickFee)*0.07;
+  var raw=Math.max(r.min,Math.round((base+surgeFee+nightFee+rainFee+pickFee-regionDisc)/1000)*1000);
+  var final=Math.max(r.min,raw-voucherDisc);
+  var earn=Math.round(final*.8/1000)*1000;
+  var eta=Math.ceil(roadKm/25*60);
+  return{fare:final,raw:raw,base:base,surge:surge,surgeFee:surgeFee,nightFee:nightFee,
+         rainFee:rainFee,pickFee:pickFee,regionDisc:regionDisc,roadKm:roadKm,eta:eta,earn:earn};
+}
+
+function fmt(n){return n>=1000000?(n/1000000).toFixed(1).replace('.0','')+'M':n.toLocaleString('vi-VN')}
+function surgeLabel(s){return s>=1.6?'Rất cao ×'+s.toFixed(2)+' 🔴':s>=1.3?'Cao ×'+s.toFixed(2)+' 🟠':'Bình thường 🟢'}
+
+/* ─── Geocode ─── */
+var geoCache={};
 async function geocodeAddr(addr){
-  if(geoCache[addr]) return geoCache[addr];
+  if(geoCache[addr])return geoCache[addr];
   try{
-    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`,{headers:{'Accept-Language':'vi'}});
-    const j=await r.json();
-    if(j.length){const res={lat:+j[0].lat,lon:+j[0].lon};geoCache[addr]=res;return res;}
+    var r=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(addr)+'&limit=1',{headers:{'Accept-Language':'vi'}});
+    var j=await r.json();
+    if(j.length){var res={lat:+j[0].lat,lon:+j[0].lon};geoCache[addr]=res;return res;}
   }catch(e){}
   return null;
 }
 function haversine(la1,lo1,la2,lo2){
-  const R=6371,dL=(la2-la1)*Math.PI/180,dO=(lo2-lo1)*Math.PI/180;
-  const a=Math.sin(dL/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dO/2)**2;
+  var R=6371,dL=(la2-la1)*Math.PI/180,dO=(lo2-lo1)*Math.PI/180;
+  var a=Math.sin(dL/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dO/2)**2;
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-/* FUZZY DEMAND */
-function tri(x,a,b,c){if(x<=a||x>=c)return 0;if(x<=b)return(x-a)/(b-a);return(c-x)/(c-b)}
-function trap(x,a,b,c,d){if(x<=a||x>=d)return 0;if(x<=b)return(x-a)/(b-a);if(x<=c)return 1;return(d-x)/(d-c)}
-function demandLevel(h,dow){
-  const m=tri(h,6.5,8,9.5),e=tri(h,16.5,18,20);
-  const n=Math.min(1,trap(h,22,23,24,24)+trap(h,0,0,1,2));
-  return Math.min(1,Math.max(m,e,n*.7)+(dow>=5?.09:0));
-}
+/* ─── Price state ─── */
+var priceState=null;
 
-/* FARE */
-function circuity(km){return km<2?1.5:km<5?1.38:km<10?1.28:1.22}
-function calcFare(sKm,type){
-  const rKm=sKm*circuity(sKm),r=RATES[type];
-  const now=new Date(),h=now.getHours()+now.getMinutes()/60,dow=now.getDay()===0?6:now.getDay()-1;
-  const demand=demandLevel(h,dow);
-  const base=r.base+rKm*r.perKm;
-  const sur=base*demand*.40;
-  const disc=rKm>15?base*.08:rKm>8?base*.04:0;
-  const total=Math.max(r.min,Math.round((base+sur-disc)/1000)*1000);
-  return{fare:total,roadKm:rKm,sur:Math.round(sur/1000)*1000,demand};
-}
-
-/* FORMAT — dễ đọc với dấu chấm hàng nghìn */
-function fmt(n){
-  if(n>=1000000) return (n/1000000).toFixed(2).replace(/\.?0+$/,'')+'M';
-  return n.toLocaleString('vi-VN');
-}
-function demandLabel(d){return d>.7?'Rất cao 🔴':d>.4?'Cao 🟠':'Bình thường 🟢'}
-
-let priceState=null;
 function renderPrice(){
-  if(!priceState) return;
-  const {sKm}=priceState;
-  const {fare,roadKm,sur,demand}=calcFare(sKm,curVtype);
-  const eta=Math.ceil(roadKm/25*60);
+  if(!priceState)return;
+  var f=calcFare(priceState.sKm,curVtype);
+  var now=new Date(),h=now.getHours()+now.getMinutes()/60;
+  var isNight=(h>=22||h<5);
 
-  document.getElementById('priceNum').textContent=fmt(fare);
-  document.getElementById('prTotal').textContent=fmt(fare)+'₫';
-  document.getElementById('prKm').textContent=roadKm.toFixed(1)+' km';
-  document.getElementById('prTime').textContent=eta+' phút';
-  document.getElementById('prSur').textContent=sur>0?'+'+fmt(sur)+'₫':'Không có';
+  document.getElementById('priceNum').textContent=fmt(f.fare);
+  document.getElementById('prTotal').textContent=fmt(f.fare)+'₫';
+  document.getElementById('prEarn').textContent=fmt(f.earn)+'₫';
+  document.getElementById('prBase').textContent=fmt(f.base)+'₫';
+  document.getElementById('prKm').textContent=f.roadKm.toFixed(1)+' km';
+  document.getElementById('prTime').textContent=f.eta+' phút';
+  document.getElementById('prSurge').textContent=f.surgeFee>0?'+'+fmt(f.surgeFee)+'₫':'0₫';
+  document.getElementById('prRegion').textContent='-'+fmt(f.regionDisc)+'₫';
 
-  const badge=document.getElementById('demandBadge');
-  badge.textContent=demandLabel(demand);
-  badge.className='demand-tag'+(demand<.4?' low':'');
+  // Night
+  document.getElementById('rowNight').style.display=isNight?'flex':'none';
+  if(isNight)document.getElementById('prNight').textContent='+'+fmt(f.nightFee)+'₫';
 
-  ['bike','car4','car7'].forEach(t=>{
-    const el=document.getElementById('vp-'+t);
-    if(el){const f=calcFare(sKm,t).fare;el.textContent=fmt(f)+'₫'}
+  // Pickup fee
+  document.getElementById('rowPickup').style.display=f.pickFee>0?'flex':'none';
+  if(f.pickFee>0)document.getElementById('prPickup').textContent='+'+fmt(f.pickFee)+'₫';
+
+  // Voucher
+  document.getElementById('rowVoucher').style.display=voucherDisc>0?'flex':'none';
+  if(voucherDisc>0)document.getElementById('prVoucher').textContent='-'+fmt(voucherDisc)+'₫';
+
+  // Surge tag
+  var tag=document.getElementById('surgeTag');
+  tag.textContent=surgeLabel(f.surge);
+  tag.className='surge-tag'+(f.surge<1.2?' low':'');
+
+  // Update all vtype prices
+  ['bike','car4','car7'].forEach(function(t){
+    var el=document.getElementById('vp-'+t);
+    if(el)el.textContent=fmt(calcFare(priceState.sKm,t).fare)+'₫';
   });
   document.getElementById('priceBox').style.display='block';
 }
 
-let priceTimer=null;
+var priceTimer=null;
 function schedulePrice(){
   clearTimeout(priceTimer);
-  const p=document.getElementById('pickup').value.trim();
-  const d=document.getElementById('destination').value.trim();
+  var p=document.getElementById('pickup').value.trim();
+  var d=document.getElementById('destination').value.trim();
   if(!p||!d){
     document.getElementById('priceBox').style.display='none';
-    ['bike','car4','car7'].forEach(t=>{const el=document.getElementById('vp-'+t);if(el)el.textContent='--'});
-    priceState=null; return;
+    ['bike','car4','car7'].forEach(function(t){var el=document.getElementById('vp-'+t);if(el)el.textContent='--'});
+    priceState=null;return;
   }
-  priceTimer=setTimeout(async()=>{
+  priceTimer=setTimeout(async function(){
     document.getElementById('priceNum').textContent='...';
     document.getElementById('priceBox').style.display='block';
-    const [l1,l2]=await Promise.all([geocodeAddr(p),geocodeAddr(d)]);
+    var [l1,l2]=await Promise.all([geocodeAddr(p),geocodeAddr(d)]);
     if(!l1||!l2){document.getElementById('priceNum').textContent='?';return}
     priceState={sKm:haversine(l1.lat,l1.lon,l2.lat,l2.lon)};
     renderPrice();
   },700);
 }
 
-/* SUBMIT */
+/* ─── Submit ─── */
 function handleSubmit(e){
-  const p=document.getElementById('pickup').value.trim();
-  const d=document.getElementById('destination').value.trim();
+  var p=document.getElementById('pickup').value.trim();
+  var d=document.getElementById('destination').value.trim();
   if(!p||!d){e.preventDefault();alert('Vui lòng nhập điểm đón và điểm đến!');return false}
   document.getElementById('f_pickup').value=p;
   document.getElementById('f_dest').value=d;
-  const btn=document.getElementById('goBtn');
+  document.getElementById('f_voucher').value=voucherApplied;
+  var btn=document.getElementById('goBtn');
   btn.disabled=true;
   document.getElementById('spin').style.display='block';
   document.getElementById('btnTxt').style.opacity='0';
   return true;
 }
 </script>
-</body>
-</html>
+</body></html>
