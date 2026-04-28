@@ -296,6 +296,7 @@
         <input type="hidden" id="f_vtype"   name="vehicle_type" value="bike"/>
         <input type="hidden" id="f_voucher" name="voucher_code"/>
         <input type="hidden" id="f_pay"     name="pay_method"   value="cash"/>
+        <input type="hidden" id="f_quote"   name="quoted_fare"/>
         <button type="submit" class="go-btn" id="goBtn">
           <div class="spinner" id="spin"></div>
           <span id="btnTxt">🔍 &nbsp;Tìm tài xế ngay</span>
@@ -614,6 +615,7 @@ function handleSubmit(e){
   document.getElementById('f_pickup').value=p;
   document.getElementById('f_dest').value=d;
   document.getElementById('f_voucher').value=voucherApplied;
+  document.getElementById('f_quote').value=(priceState&&priceState.current)?priceState.current.fare:'';
   var btn=document.getElementById('goBtn');btn.disabled=true;
   document.getElementById('spin').style.display='block';
   document.getElementById('btnTxt').style.opacity='0';

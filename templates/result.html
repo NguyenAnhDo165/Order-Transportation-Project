@@ -78,20 +78,7 @@
     .eta-lbl{font-size:9px;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em}
     .vehicle-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:#f8fafc;border-radius:10px;font-size:12px;color:var(--sub)}
     .plate{font-family:'Roboto Mono',monospace;font-size:12px;font-weight:700;color:var(--text);padding:3px 8px;background:var(--white);border:1px solid var(--border);border-radius:6px;letter-spacing:.08em}
-    .fare-box{background:linear-gradient(135deg,var(--accent-light) 0%,var(--green-bg) 100%);border:1px solid var(--accent-mid);border-radius:13px;overflow:hidden}
-    .fare-head{padding:8px 12px 7px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(37,99,235,.1)}
-    .fare-amount{display:flex;align-items:baseline;gap:3px}
-    .fare-num{font-family:'Roboto Mono',monospace;font-size:22px;font-weight:700;color:var(--accent);letter-spacing:-1px;line-height:1}
-    .fare-cur{font-size:13px;font-weight:600;color:var(--sub)}
-    .demand-tag{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;background:var(--amber-bg);color:var(--amber);border:1px solid #fde68a}
-    .demand-tag.low{background:var(--green-bg);color:var(--green);border-color:#a7f3d0}
-    .fare-body{padding:7px 12px 9px;display:flex;flex-direction:column;gap:4px}
-    .frow{display:flex;justify-content:space-between;align-items:center;font-size:11px}
-    .frow-label{color:var(--muted)}
-    .frow-val{font-family:'Roboto Mono',monospace;font-size:11px;font-weight:600;color:var(--sub);letter-spacing:-.3px}
-    .f-divider{height:1px;background:rgba(37,99,235,.1);margin:2px 0}
-    .frow.total .frow-label{color:var(--text);font-weight:600;font-size:12px}
-    .frow.total .frow-val{font-family:'Roboto Mono',monospace;font-size:13px;font-weight:700;color:var(--accent)}
+
     .eta-bar-wrap{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
     .eta-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#06b6d4);border-radius:2px;transition:width 1s linear}
     .btn-row{display:flex;gap:7px;padding-bottom:2px}
@@ -253,21 +240,7 @@
       <span>{{ driver.vehicle_icon }} {{ driver.vehicle }}</span>
       <span class="plate">{{ driver.plate }}</span>
     </div>
-    <div class="fare-box">
-      <div class="fare-head">
-        <div class="fare-amount">
-          <span class="fare-num">{{ driver.fare }}</span>
-          <span class="fare-cur">₫</span>
-        </div>
-        <span class="demand-tag {{ 'low' if driver.demand_low else '' }}">{{ driver.demand_label }}</span>
-      </div>
-      <div class="fare-body">
-        <div class="frow"><span class="frow-label">📏 Khoảng cách</span><span class="frow-val">{{ driver.road_km }} km</span></div>
-        <div class="frow"><span class="frow-label">🚦 Phụ phí</span><span class="frow-val">+{{ driver.surcharge }}₫</span></div>
-        <div class="f-divider"></div>
-        <div class="frow total"><span class="frow-label">💳 Tổng cộng</span><span class="frow-val">{{ driver.fare }}₫</span></div>
-      </div>
-    </div>
+
     <div class="eta-bar-wrap"><div class="eta-bar-fill" id="etaBar"></div></div>
     <div class="btn-row">
       <button class="abtn danger" onclick="cancelRide()">✕ Hủy</button>
@@ -323,6 +296,10 @@
       </div>
       <div class="review-title">Đánh giá chuyến đi 🌟</div>
       <div class="review-sub">Chuyến đi của bạn đã hoàn thành</div>
+      <div style="margin:10px 0 8px;padding:10px 12px;border:1.5px solid #bfdbfe;border-radius:14px;background:#eff6ff;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <span style="font-size:12px;font-weight:700;color:#475569">Tổng tiền chuyến đi</span>
+        <span style="font-family:Roboto Mono,monospace;font-size:18px;font-weight:800;color:#2563eb">{{ driver.fare }}₫</span>
+      </div>
       <div class="star-row" id="starRow">
         <span class="star" data-v="1">⭐</span>
         <span class="star" data-v="2">⭐</span>
@@ -347,6 +324,7 @@
   <div class="thankyou" id="thankyouScreen">
     <div class="ty-icon">🎉</div>
     <div class="ty-title">Cảm ơn bạn!</div>
+    <div style="padding:10px 14px;border-radius:14px;background:#eff6ff;border:1.5px solid #bfdbfe;font-family:Roboto Mono,monospace;font-size:20px;font-weight:800;color:#2563eb">{{ driver.fare }}₫</div>
     <div class="ty-sub">Đánh giá của bạn đã được gửi.<br>Hẹn gặp lại trên GoRide! 🛵</div>
     <button class="ty-btn" onclick="window.location.href='/'">Đặt xe mới</button>
   </div>
@@ -714,7 +692,7 @@ function submitReview(){
   btn.disabled=true; btn.textContent='Đang gửi...';
   fetch('/submit_review',{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({ride_id:RIDE_ID,driver_name:DRIVER_NAME,plate:DRIVER_PLATE,stars:selStars,tags:selTags.join(', '),comment:comment})
+    body:JSON.stringify({ride_id:RIDE_ID,driver_name:DRIVER_NAME,plate:DRIVER_PLATE,stars:selStars,tags:selTags.join(', '),comment:comment,fare:{{ driver.fare | replace(',', '') | tojson }},driver_earn:{{ driver.driver_earn | replace(',', '') | tojson }}})
   }).then(function(r){return r.json()}).then(function(){
     document.getElementById('reviewOverlay').classList.remove('active');
     document.getElementById('thankyouScreen').classList.add('active');

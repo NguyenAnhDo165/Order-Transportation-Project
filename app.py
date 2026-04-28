@@ -7,11 +7,19 @@ import networkx as nx
 import csv, os, pickle, functools, math, random, threading, shutil
 from datetime import datetime
 from pyngrok import ngrok
+from dotenv import load_dotenv
 
 # ════════════════════════════════════════════════
 #  Ngrok
 # ════════════════════════════════════════════════
-ngrok.set_auth_token("3CvB1dM0FSwRo44S7Z85N1YGwX9_47sWZ8uQbn6TgTa1T3kX7")
+# Đọc token từ file .env để không lộ token trong source code.
+# Tạo file .env cùng cấp app.py và thêm dòng:
+load_dotenv()
+NGROK_AUTH_TOKEN = os.getenv("NGROK_AUTH_TOKEN", "").strip()
+if NGROK_AUTH_TOKEN:
+    ngrok.set_auth_token(NGROK_AUTH_TOKEN)
+else:
+    print("⚠️ Chưa có NGROK_AUTH_TOKEN trong .env; ngrok có thể không chạy.")
 
 # ════════════════════════════════════════════════
 #  OSMnx
@@ -223,9 +231,7 @@ def fuzzy_weather_fee(is_rain: bool, is_storm: bool) -> float:
     return 0.0
 
 def pickup_fee(dist_km: float) -> int:
-    """Extra fee if driver is far from pickup."""
-    if dist_km > 6:  return 15_000
-    if dist_km > 3:  return 10_000
+    """Pickup distance surcharge has been disabled: fare no longer depends on driver→pickup distance."""
     return 0
 
 def calc_fare(trip_km: float, vtype: str, driver_dist_km: float = 0,
@@ -251,11 +257,11 @@ def calc_fare(trip_km: float, vtype: str, driver_dist_km: float = 0,
     is_rain    = random.random() < 0.25   # 25% chance rain in demo
     weather_fee= base_fare * fuzzy_weather_fee(is_rain, False)
 
-    # ── Pickup fee ──
-    pick_fee   = pickup_fee(driver_dist_km)
+    # ── Pickup fee disabled ──
+    pick_fee   = 0
 
     # ── Subtotal before discount ──
-    subtotal   = base_fare + surge_fee + night_fee + weather_fee + pick_fee
+    subtotal   = base_fare + surge_fee + night_fee + weather_fee
 
     # ── Regional discount ──
     region_disc = subtotal * REGION_DISC
@@ -354,19 +360,22 @@ _ensure_reviews_header()
 def save_review(data):
     ride_id  = data.get("ride_id","")
     ride_obj = rides.get(ride_id, {})
+    row = {
+        "timestamp"  : datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "ride_id"    : ride_id,
+        "driver_name": data.get("driver_name",""),
+        "plate"      : data.get("plate",""),
+        "stars"      : data.get("stars", 0),
+        "tags"       : data.get("tags",""),
+        "comment"    : data.get("comment",""),
+        "fare"       : ride_obj.get("fare", data.get("fare","")),
+        "driver_earn": ride_obj.get("driver_earn_raw", data.get("driver_earn","")),
+    }
     with open(REVIEWS_FILE,"a",newline='',encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=REVIEW_FIELDS)
-        w.writerow({
-            "timestamp"  : datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "ride_id"    : ride_id,
-            "driver_name": data.get("driver_name",""),
-            "plate"      : data.get("plate",""),
-            "stars"      : data.get("stars", 0),
-            "tags"       : data.get("tags",""),
-            "comment"    : data.get("comment",""),
-            "fare"       : ride_obj.get("fare", data.get("fare","")),
-            "driver_earn": ride_obj.get("driver_earn_raw", data.get("driver_earn","")),
-        })
+        w.writerow(row)
+        f.flush()
+        os.fsync(f.fileno())
 
 def read_reviews():
     if not os.path.exists(REVIEWS_FILE): return []
@@ -513,17 +522,88 @@ def api_revenue_chart():
 # ════════════════════════════════════════════════
 #  Voucher management
 # ════════════════════════════════════════════════
+VOUCHER_FIELDS = ["code","discount_pct","max_discount","description","expires","active"]
+
+def read_voucher_rows():
+    if not os.path.exists(VOUCHERS_FILE):
+        load_vouchers()  # tạo file mẫu nếu chưa có
+    with open(VOUCHERS_FILE,newline='',encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+def write_voucher_rows(rows):
+    tmp = VOUCHERS_FILE + ".tmp"
+    with open(tmp,"w",newline='',encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=VOUCHER_FIELDS)
+        w.writeheader()
+        for row in rows:
+            w.writerow({k: row.get(k, "") for k in VOUCHER_FIELDS})
+        f.flush()
+        os.fsync(f.fileno())
+    shutil.move(tmp, VOUCHERS_FILE)
+
+def reload_vouchers():
+    global VOUCHERS
+    VOUCHERS = load_vouchers()
+
 @app.route("/api/vouchers", methods=["GET"])
 def api_get_vouchers():
-    rows = []
-    if os.path.exists(VOUCHERS_FILE):
-        with open(VOUCHERS_FILE,newline='',encoding="utf-8") as f:
-            rows = list(csv.DictReader(f))
-    return jsonify({"vouchers": rows})
+    return jsonify({"vouchers": read_voucher_rows()})
 
 @app.route("/api/vouchers", methods=["POST"])
 def api_set_vouchers():
-    return jsonify({"ok": True})
+    data = request.get_json(force=True)
+    code = str(data.get("code","")).strip().upper()
+    if not code:
+        return jsonify({"ok": False, "error": "Thiếu mã voucher"}), 400
+
+    try:
+        discount_pct = float(data.get("discount_pct", 0))
+        max_discount = float(data.get("max_discount", 0))
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "discount_pct/max_discount không hợp lệ"}), 400
+
+    if discount_pct < 0 or max_discount < 0:
+        return jsonify({"ok": False, "error": "Giá trị giảm không được âm"}), 400
+
+    new_row = {
+        "code"         : code,
+        "discount_pct" : discount_pct,
+        "max_discount" : max_discount,
+        "description"  : str(data.get("description", "")).strip(),
+        "expires"      : str(data.get("expires", "")).strip(),
+        "active"       : str(data.get("active", "1")).strip() or "1",
+    }
+
+    rows = read_voucher_rows()
+    updated = False
+    for i, row in enumerate(rows):
+        if row.get("code", "").strip().upper() == code:
+            rows[i] = new_row
+            updated = True
+            break
+    if not updated:
+        rows.append(new_row)
+
+    write_voucher_rows(rows)
+    reload_vouchers()
+    return jsonify({"ok": True, "voucher": new_row, "updated": updated})
+
+@app.route("/api/vouchers/<code>", methods=["DELETE"])
+def api_delete_voucher(code):
+    code = code.strip().upper()
+    rows = read_voucher_rows()
+    found = False
+    for row in rows:
+        if row.get("code", "").strip().upper() == code:
+            row["active"] = "0"
+            found = True
+            break
+    if not found:
+        return jsonify({"ok": False, "error": "Không tìm thấy voucher"}), 404
+
+    write_voucher_rows(rows)
+    reload_vouchers()
+    return jsonify({"ok": True, "code": code, "active": "0"})
 
 # ════════════════════════════════════════════════
 #  Dashboard API
@@ -645,6 +725,7 @@ def index():
         destination  = request.form["destination"]
         vtype        = request.form.get("vehicle_type","bike")
         voucher_code = request.form.get("voucher_code","").strip().upper()
+        quoted_fare  = request.form.get("quoted_fare", "").replace(",", "").strip()
 
         loc1 = cached_geocode(pickup)
         loc2 = cached_geocode(destination)
@@ -680,6 +761,18 @@ def index():
             eta=max(1,math.ceil(dist_km/25*60))
 
             fi = calc_fare(trip_km, vtype, dist_km, 0, voucher_code)
+
+            # Use the final amount displayed on index.html as the official trip fare.
+            # This keeps index → ride data → dashboard/reviews/result consistent.
+            try:
+                qfare = int(float(quoted_fare)) if quoted_fare else 0
+            except ValueError:
+                qfare = 0
+            if qfare > 0:
+                fi["fare"] = qfare
+                fi["fare_raw"] = qfare
+                fi["driver_earn"] = round(qfare * DRIVER_SHARE / 1000) * 1000
+
             ride_id = new_ride({
                 "driver_name"  : best["name"],
                 "plate"        : plate,
