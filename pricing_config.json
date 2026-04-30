@@ -17,6 +17,7 @@
     "wait_min": 1000,
     "min": 32000
   },
+  
   "surge_morning_pct": 55,
   "surge_evening_pct": 60,
   "surge_night_pct": 25,
