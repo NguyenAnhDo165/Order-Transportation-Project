@@ -17,15 +17,15 @@
     "wait_min": 1000,
     "min": 32000
   },
-  "surge_morning_pct": 55.0,
-  "surge_evening_pct": 60.0,
-  "surge_night_pct": 25.0,
-  "surge_weekend_pct": 20.0,
-  "surge_max_pct": 80.0,
-  "rain_min_pct": 10.0,
-  "rain_max_pct": 30.0,
-  "storm_pct": 50.0,
-  "night_pct": 12.0,
-  "region_disc_pct": 7.0,
-  "driver_share_pct": 80.0
+  "surge_morning_pct": 55,
+  "surge_evening_pct": 60,
+  "surge_night_pct": 25,
+  "surge_weekend_pct": 20,
+  "surge_max_pct": 80,
+  "rain_min_pct": 10,
+  "rain_max_pct": 30,
+  "storm_pct": 50,
+  "night_pct": 12,
+  "region_disc_pct": 7,
+  "driver_share_pct": 80
 }
