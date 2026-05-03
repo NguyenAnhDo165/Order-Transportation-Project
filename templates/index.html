@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>GoRide – Đặt xe</title>
+  <link rel="icon" type="image/png" href="/static/goride.png?v=20260503"/>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=Roboto+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -33,7 +34,8 @@
     /* LOGO */
     .logo-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0 14px}
     .logo-left{display:flex;align-items:center;gap:9px}
-    .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#2563eb,#06b6d4);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 3px 12px rgba(37,99,235,.3)}
+    .logo-icon{width:40px;height:40px;background:#fff;border:1px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(37,99,235,.18);overflow:hidden;padding:3px;flex-shrink:0}
+    .logo-icon img{width:100%;height:100%;object-fit:contain;display:block}
     .logo-text{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:20px;letter-spacing:-.5px;color:var(--text)}
     .live-pill{display:flex;align-items:center;gap:5px;padding:5px 11px;background:var(--green-bg);border:1px solid var(--green-mid);border-radius:20px;font-size:12px;font-weight:600;color:var(--green)}
     .ldot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.8s ease-in-out infinite}
@@ -177,7 +179,7 @@
 
   <div class="screen">
     <div class="logo-row">
-      <div class="logo-left"><div class="logo-icon">🛵</div><span class="logo-text">GoRide</span></div>
+      <div class="logo-left"><div class="logo-icon"><img src="/static/goride.png?v=20260503" alt="GoRide logo"/></div><span class="logo-text">GoRide</span></div>
       <div class="live-pill"><div class="ldot"></div>Trực tuyến</div>
     </div>
     <div class="greeting">
@@ -465,15 +467,14 @@ function drawQR(amount,content){
     }
   }
   /* Center logo */
-  var lw=28,lh=28,lx=(S-lw)/2,ly=(S-lh)/2;
-  ctx.fillStyle='#fff';ctx.fillRect(lx-3,ly-3,lw+6,lh+6);
-  ctx.fillStyle='#2563eb';
-  if(ctx.roundRect)ctx.roundRect(lx,ly,lw,lh,6);
-  else ctx.fillRect(lx,ly,lw,lh);
-  ctx.fill();
-  ctx.fillStyle='#fff';ctx.font='bold 15px sans-serif';
-  ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText('🛵',lx+lw/2,ly+lh/2+1);
+  var lw=34,lh=34,lx=(S-lw)/2,ly=(S-lh)/2;
+  ctx.fillStyle='#fff';ctx.fillRect(lx-5,ly-5,lw+10,lh+10);
+  var logo=new Image();
+  logo.onload=function(){
+    ctx.fillStyle='#fff';ctx.fillRect(lx-5,ly-5,lw+10,lh+10);
+    ctx.drawImage(logo,lx,ly,lw,lh);
+  };
+  logo.src='/static/goride.png?v=20260503';
 }
 
 /* ─── Voucher ─── */

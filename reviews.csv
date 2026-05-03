@@ -1,2 +1,13 @@
 timestamp,ride_id,driver_name,plate,stars,tags,comment,fare,driver_earn
 2026-04-30 13:03:43,c7abbb64,Dương Thị Tùng,59T6 - 5830,4,"🛵 Lái an toàn, 🧹 Xe sạch",,36000,29000
+2026-05-01 07:52:59,22e61b1f,Ngô Minh Hiếu,72C3 - 9767,5,,Chạy vừa phải,51000,41000
+2026-05-01 07:54:31,b4e1ea2d,Bùi Anh Đạt,61C3 - 4436,5,"🚀 Đúng giờ, 📍 Đúng điểm",,53000,42000
+2026-05-01 07:56:18,c193b9f5,Võ Văn Bảo,51T4 - 8850,5,"😊 Thân thiện, 🛵 Lái an toàn",,99000,79000
+2026-05-01 07:58:00,5fb49772,Ngô Văn Tùng,61C6 - 9097,4,😊 Thân thiện,,140000,112000
+2026-05-01 07:58:44,9e7f6b39,Hồ Quang Nam,51F3 - 2833,5,🧹 Xe sạch,,50000,40000
+2026-05-01 08:00:00,c6742634,Lê Văn Phúc,61M3 - 6224,4,,Chạy hơi nhanh,47000,38000
+2026-05-01 08:00:39,5c54c8cf,Võ Ngọc Việt,59H9 - 4886,5,🔇 Yên tĩnh,,51000,41000
+2026-05-01 08:33:36,6ce0732c,Phạm Anh Hiếu,41B7 - 1829,5,"😊 Thân thiện, 🧹 Xe sạch",,95000,76000
+2026-05-01 08:59:32,adc99c72,Võ Quang Khánh,51F2 - 6433,5,,,64000,51000
+
+2026-05-03 09:54:37,9e6d85a1,Dương Thị Tùng,72B5 - 1482,5,"🛵 Lái an toàn, 🧹 Xe sạch, 📍 Đúng điểm, 😊 Thân thiện, 🚀 Đúng giờ","tài xế nhiệt tình, yêu nghề",38000,30000

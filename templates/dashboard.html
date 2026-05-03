@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>GoRide — Dashboard</title>
+  <link rel="icon" type="image/png" href="/static/goride.png?v=20260503"/>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&family=Roboto+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -23,7 +24,8 @@
     /* TOPBAR */
     .topbar{height:58px;background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:var(--sh)}
     .tb-l{display:flex;align-items:center;gap:11px}
-    .tb-logo{width:32px;height:32px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px}
+    .tb-logo{width:36px;height:36px;background:#fff;border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh);overflow:hidden;padding:3px;flex-shrink:0}
+    .tb-logo img{width:100%;height:100%;object-fit:contain;display:block}
     .tb-title{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:17px;letter-spacing:-.4px}
     .tb-tag{padding:3px 10px;background:var(--accent-light);border:1px solid var(--accent-mid);border-radius:20px;font-size:11px;font-weight:600;color:var(--accent)}
     .tb-r{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sub)}
@@ -132,7 +134,7 @@
 
 <div class="topbar">
   <div class="tb-l">
-    <div class="tb-logo">🛵</div>
+    <div class="tb-logo"><img src="/static/goride.png?v=20260503" alt="GoRide logo"/></div>
     <span class="tb-title">GoRide</span>
     <span class="tb-tag">Dev Dashboard</span>
   </div>
