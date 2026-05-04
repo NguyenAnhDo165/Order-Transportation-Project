@@ -563,6 +563,64 @@ def nearest_node(lat,lon): return ox.distance.nearest_nodes(G, lon, lat)
 def get_initials(name):
     p=name.split(); return (p[0][0]+p[-1][0]).upper() if len(p)>=2 else name[:2].upper()
 
+
+# ════════════════════════════════════════════════
+#  User personalization: driver style preference
+# ════════════════════════════════════════════════
+DRIVER_PREFERENCE_OPTIONS = {
+    "quiet": {
+        "label": "Im lặng",
+        "emoji": "🔇",
+        "desc": "Tài xế hạn chế trò chuyện, ưu tiên chuyến đi yên tĩnh."
+    },
+    "chat": {
+        "label": "Trò chuyện",
+        "emoji": "💬",
+        "desc": "Tài xế thân thiện, sẵn sàng trò chuyện khi bạn muốn."
+    },
+    "any": {
+        "label": "Tối ưu nhất",
+        "emoji": "✨",
+        "desc": "GoRide tự chọn tài xế phù hợp nhất theo rating, khoảng cách và tốc độ đón."
+    },
+}
+
+def normalize_driver_preference(value: str) -> str:
+    value = (value or "any").strip().lower()
+    aliases = {
+        "im lặng": "quiet", "im lang": "quiet", "quiet": "quiet",
+        "yên tĩnh": "quiet", "yen tinh": "quiet", "silent": "quiet",
+        "trò chuyện": "chat", "tro chuyen": "chat", "chat": "chat",
+        "talk": "chat", "friendly": "chat",
+        "any": "any", "auto": "any", "best": "any", "": "any",
+    }
+    return aliases.get(value, "any")
+
+def driver_pref_matches(driver_pref: str, requested_pref: str) -> bool:
+    requested_pref = normalize_driver_preference(requested_pref)
+    if requested_pref == "any":
+        return True
+    pref = (driver_pref or "").strip().lower()
+    if requested_pref == "quiet":
+        return any(k in pref for k in ["im", "quiet", "yên", "yen", "silent"])
+    if requested_pref == "chat":
+        return any(k in pref for k in ["trò", "tro", "chat", "talk", "friendly"])
+    return False
+
+def driver_pref_label(value: str) -> str:
+    key = normalize_driver_preference(value)
+    opt = DRIVER_PREFERENCE_OPTIONS.get(key, DRIVER_PREFERENCE_OPTIONS["any"])
+    return f"{opt['emoji']} {opt['label']}"
+
+def driver_pref_badge_class(value: str) -> str:
+    key = normalize_driver_preference(value)
+    if key == "quiet":
+        return "badge-quiet"
+    if key == "chat":
+        return "badge-chat"
+    return "badge-auto"
+
+
 # ════════════════════════════════════════════════
 #  Reviews
 # ════════════════════════════════════════════════
@@ -636,8 +694,8 @@ def read_reviews():
 # ════════════════════════════════════════════════
 TRIP_FIELDS = [
     "timestamp", "ride_id", "status", "driver_name", "plate", "vehicle_type",
-    "pickup", "destination", "road_km", "fare", "fare_raw", "driver_earn",
-    "payment_method", "voucher_code"
+    "driver_preference", "pickup", "destination", "road_km", "fare", "fare_raw",
+    "driver_earn", "payment_method", "voucher_code"
 ]
 
 def _ensure_trips_header():
@@ -693,6 +751,7 @@ def save_trip_history(data, status="completed"):
         "driver_name"   : data.get("driver_name") or ride_obj.get("driver_name", ""),
         "plate"         : data.get("plate") or ride_obj.get("plate", ""),
         "vehicle_type"  : data.get("vtype") or ride_obj.get("vtype", ""),
+        "driver_preference": data.get("driver_preference") or ride_obj.get("driver_preference", ""),
         "pickup"        : data.get("pickup") or ride_obj.get("pickup", ""),
         "destination"   : data.get("destination") or ride_obj.get("destination", ""),
         "road_km"       : data.get("road_km") or ride_obj.get("road_km", ""),
@@ -1111,6 +1170,7 @@ def index():
         destination  = request.form["destination"]
         vtype        = request.form.get("vehicle_type","bike")
         voucher_code = request.form.get("voucher_code","").strip().upper()
+        requested_pref = normalize_driver_preference(request.form.get("driver_preference", "any"))
         quoted_fare  = request.form.get("quoted_fare", "").replace(",", "").strip()
 
         loc1 = cached_geocode(pickup)
@@ -1123,19 +1183,37 @@ def index():
             trip_route, trip_km = get_route(pn, dn)
             trip_coords = route_coords(trip_route)
 
-            # Driver matching
+            # Driver matching with user personalization
+            # Người dùng có thể chọn gu tài xế: Im lặng / Trò chuyện / Tối ưu nhất.
+            # Hệ thống vẫn giữ fuzzy_score gốc, nhưng cộng điểm ưu tiên nếu gu tài xế khớp insight đã chọn.
             pc = (loc1.latitude, loc1.longitude)
             scored=[]
             for d in DRIVERS:
                 dist=geodesic(pc,(d["lat"],d["lon"])).km
-                if dist>15: continue
-                sc=fuzzy_score(d["rating"],dist,random.randint(120,3500))
-                scored.append((sc,dist,d))
+                if dist>15: 
+                    continue
+                trips_seed = random.randint(120,3500)
+                base_score = fuzzy_score(d["rating"], dist, trips_seed)
+                match = driver_pref_matches(d.get("preference",""), requested_pref)
+                pref_bonus = 0 if requested_pref == "any" else (22 if match else -8)
+                sc = base_score + pref_bonus
+                scored.append((sc, dist, d, match))
+
             if not scored:
-                scored=[(fuzzy_score(d["rating"],geodesic(pc,(d["lat"],d["lon"])).km,500),
-                         geodesic(pc,(d["lat"],d["lon"])).km,d) for d in DRIVERS]
+                for d in DRIVERS:
+                    dist = geodesic(pc,(d["lat"],d["lon"])).km
+                    match = driver_pref_matches(d.get("preference",""), requested_pref)
+                    pref_bonus = 0 if requested_pref == "any" else (22 if match else -8)
+                    scored.append((fuzzy_score(d["rating"], dist, 500) + pref_bonus, dist, d, match))
+
+            # Nếu có tài xế đúng gu trong nhóm gần, ưu tiên nhóm này trước để insight cá nhân hóa thể hiện rõ.
+            if requested_pref != "any":
+                matched = [x for x in scored if x[3]]
+                if matched:
+                    scored = matched
+
             scored.sort(key=lambda x:(-x[0],x[1]))
-            sc,dist_km,best=random.choice(scored[:min(3,len(scored))])
+            sc,dist_km,best,pref_matched=random.choice(scored[:min(3,len(scored))])
 
             # Approach route
             dnode=nearest_node(best["lat"],best["lon"])
@@ -1168,6 +1246,8 @@ def index():
                 "driver_earn_raw": fi["driver_earn"],
                 "eta"          : eta,
                 "vtype"        : vtype,
+                "driver_preference": requested_pref,
+                "driver_preference_label": driver_pref_label(requested_pref),
                 "pickup"       : pickup,
                 "destination"  : destination,
                 "voucher_code" : voucher_code,
@@ -1180,7 +1260,10 @@ def index():
                 "name"          : best["name"],
                 "rating"        : best["rating"],
                 "pref"          : best["preference"],
-                "prefClass"     : "badge-quiet" if best["preference"].lower() in ("quiet","yên tĩnh") else "badge-chat",
+                "prefClass"     : "badge-quiet" if best["preference"].lower() in ("quiet","yên tĩnh","im lặng") else "badge-chat",
+                "requested_pref" : driver_pref_label(requested_pref),
+                "requested_pref_raw": requested_pref,
+                "requested_pref_matched": bool(pref_matched),
                 "plate"         : plate,
                 "vehicle"       : f"{veh_name} · {veh_color}",
                 "vehicle_icon"  : VEHICLE_ICON.get(vtype,"🛵"),
@@ -1214,6 +1297,7 @@ def index():
             print(f"\n🛵 [{ride_id}] {best['name']} | ETA {eta}min | {fi['fare']:,}₫ → Driver {fi['driver_earn']:,}₫")
             if fi["voucher_info"]: print(f"   🎟  Voucher {voucher_code}: -{fi['voucher_disc']:,}₫")
             print(f"   Surge ×{fi['surge_mult']} | Rain: {fi['is_rain']}")
+            print(f"   Gu tài xế: {driver_pref_label(requested_pref)} | Match: {pref_matched}")
             print(f"   👉 Dashboard: http://localhost:5000/dashboard\n")
 
             return render_template("result.html", driver=d_info)

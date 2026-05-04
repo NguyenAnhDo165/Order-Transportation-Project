@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>GoRide – Đặt xe</title>
-  <link rel="icon" type="image/png" href="/static/goride.png?v=20260503"/>
+  <link rel="icon" type="image/png" href="/static/goride.png"/>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=Roboto+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -158,6 +158,31 @@
     .promo-title{color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px}
     .promo-badge{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:9px;padding:5px 9px;color:#fff;font-family:'Roboto Mono',monospace;font-size:13px;font-weight:700;letter-spacing:.5px}
 
+
+    /* DRIVER STYLE MODAL */
+    .pref-overlay{position:absolute;inset:0;z-index:650;background:rgba(15,23,42,.58);backdrop-filter:blur(9px);border-radius:44px;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .28s ease}
+    .pref-overlay.show{opacity:1;pointer-events:all}
+    .pref-sheet{width:100%;background:var(--white);border-radius:28px 28px 0 0;padding:0 18px 24px;box-shadow:0 -18px 45px rgba(15,23,42,.18);transform:translateY(100%);transition:transform .42s cubic-bezier(.16,1,.3,1)}
+    .pref-overlay.show .pref-sheet{transform:translateY(0)}
+    .pref-handle{width:38px;height:4px;background:var(--border2);border-radius:4px;margin:12px auto 14px}
+    .pref-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:17px;font-weight:800;color:var(--text);text-align:center;letter-spacing:-.3px}
+    .pref-sub{font-size:12px;color:var(--muted);text-align:center;line-height:1.45;margin:5px 10px 14px}
+    .pref-list{display:flex;flex-direction:column;gap:9px}
+    .pref-card{width:100%;display:flex;align-items:center;gap:11px;text-align:left;background:#f8fafc;border:1.5px solid var(--border);border-radius:16px;padding:12px 13px;cursor:pointer;transition:all .18s}
+    .pref-card:hover{background:var(--accent-light);border-color:var(--accent-mid);transform:translateY(-1px)}
+    .pref-card.active{background:var(--accent-light);border-color:var(--accent);box-shadow:0 4px 16px rgba(37,99,235,.14)}
+    .pref-ico{width:38px;height:38px;border-radius:12px;background:var(--white);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+    .pref-name{font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:800;color:var(--text);margin-bottom:2px}
+    .pref-desc{font-size:11px;color:var(--muted);line-height:1.35}
+    .pref-check{margin-left:auto;font-size:16px;color:var(--accent);opacity:0;transform:scale(.8);transition:all .16s}
+    .pref-card.active .pref-check{opacity:1;transform:scale(1)}
+    .pref-actions{display:flex;gap:8px;margin-top:14px}
+    .pref-btn{height:44px;border-radius:13px;border:1.5px solid var(--border);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:800;cursor:pointer;transition:all .15s}
+    .pref-btn.secondary{flex:1;background:#fff;color:var(--sub)}
+    .pref-btn.secondary:hover{background:#f8fafc;border-color:var(--border2)}
+    .pref-btn.primary{flex:1.6;background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 3px 12px rgba(37,99,235,.25)}
+    .pref-btn.primary:hover{background:var(--accent-dk)}
+
     /* GO BTN */
     .go-btn{width:100%;height:50px;background:linear-gradient(135deg,#2563eb,#1d4ed8);border:none;border-radius:15px;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(37,99,235,.3);transition:all .18s;margin-top:12px}
     .go-btn:hover{box-shadow:0 6px 22px rgba(37,99,235,.4);transform:translateY(-1px)}
@@ -179,7 +204,7 @@
 
   <div class="screen">
     <div class="logo-row">
-      <div class="logo-left"><div class="logo-icon"><img src="/static/goride.png?v=20260503" alt="GoRide logo"/></div><span class="logo-text">GoRide</span></div>
+      <div class="logo-left"><div class="logo-icon"><img src="/static/goride.png" alt="GoRide logo"></div><span class="logo-text">GoRide</span></div>
       <div class="live-pill"><div class="ldot"></div>Trực tuyến</div>
     </div>
     <div class="greeting">
@@ -298,6 +323,7 @@
         <input type="hidden" id="f_vtype"   name="vehicle_type" value="bike"/>
         <input type="hidden" id="f_voucher" name="voucher_code"/>
         <input type="hidden" id="f_pay"     name="pay_method"   value="cash"/>
+        <input type="hidden" id="f_pref"    name="driver_preference" value="any"/>
         <input type="hidden" id="f_quote"   name="quoted_fare"/>
         <button type="submit" class="go-btn" id="goBtn">
           <div class="spinner" id="spin"></div>
@@ -327,6 +353,48 @@
   </div>
 
   <div class="home-indicator"><div class="home-bar"></div></div>
+
+
+  <!-- DRIVER STYLE PERSONALIZATION -->
+  <div class="pref-overlay" id="prefOverlay">
+    <div class="pref-sheet">
+      <div class="pref-handle"></div>
+      <div class="pref-title">Bạn muốn tài xế theo phong cách nào?</div>
+      <div class="pref-sub">
+        Đây là điểm cá nhân hóa của GoRide: hệ thống sẽ ưu tiên tài xế phù hợp với cảm xúc chuyến đi của bạn.
+      </div>
+      <div class="pref-list">
+        <button type="button" class="pref-card" data-pref="quiet" onclick="selectDriverPref('quiet',this)">
+          <span class="pref-ico">🔇</span>
+          <span>
+            <div class="pref-name">Im lặng</div>
+            <div class="pref-desc">Tài xế hạn chế trò chuyện, phù hợp khi bạn muốn nghỉ ngơi hoặc tập trung.</div>
+          </span>
+          <span class="pref-check">✓</span>
+        </button>
+        <button type="button" class="pref-card" data-pref="chat" onclick="selectDriverPref('chat',this)">
+          <span class="pref-ico">💬</span>
+          <span>
+            <div class="pref-name">Trò chuyện</div>
+            <div class="pref-desc">Tài xế thân thiện, tạo cảm giác thoải mái trong suốt chuyến đi.</div>
+          </span>
+          <span class="pref-check">✓</span>
+        </button>
+        <button type="button" class="pref-card active" data-pref="any" onclick="selectDriverPref('any',this)">
+          <span class="pref-ico">✨</span>
+          <span>
+            <div class="pref-name">Tối ưu nhất</div>
+            <div class="pref-desc">GoRide tự chọn tài xế tốt nhất theo rating, khoảng cách và tốc độ đón.</div>
+          </span>
+          <span class="pref-check">✓</span>
+        </button>
+      </div>
+      <div class="pref-actions">
+        <button type="button" class="pref-btn secondary" onclick="closeDriverPref()">Quay lại</button>
+        <button type="button" class="pref-btn primary" onclick="confirmDriverPref()">Xác nhận đặt xe</button>
+      </div>
+    </div>
+  </div>
 
   <!-- QR OVERLAY -->
   <div class="qr-overlay" id="qrOverlay">
@@ -467,14 +535,15 @@ function drawQR(amount,content){
     }
   }
   /* Center logo */
-  var lw=34,lh=34,lx=(S-lw)/2,ly=(S-lh)/2;
-  ctx.fillStyle='#fff';ctx.fillRect(lx-5,ly-5,lw+10,lh+10);
-  var logo=new Image();
-  logo.onload=function(){
-    ctx.fillStyle='#fff';ctx.fillRect(lx-5,ly-5,lw+10,lh+10);
-    ctx.drawImage(logo,lx,ly,lw,lh);
-  };
-  logo.src='/static/goride.png?v=20260503';
+  var lw=28,lh=28,lx=(S-lw)/2,ly=(S-lh)/2;
+  ctx.fillStyle='#fff';ctx.fillRect(lx-3,ly-3,lw+6,lh+6);
+  ctx.fillStyle='#2563eb';
+  if(ctx.roundRect)ctx.roundRect(lx,ly,lw,lh,6);
+  else ctx.fillRect(lx,ly,lw,lh);
+  ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='bold 15px sans-serif';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('🛵',lx+lw/2,ly+lh/2+1);
 }
 
 /* ─── Voucher ─── */
@@ -608,6 +677,39 @@ function schedulePrice(){
   },700);
 }
 
+
+/* ─── Driver style personalization ─── */
+var selectedDriverPref='any';
+var pendingSubmitForm=null;
+
+function selectDriverPref(pref,el){
+  selectedDriverPref=pref;
+  document.querySelectorAll('.pref-card').forEach(function(c){c.classList.remove('active')});
+  el.classList.add('active');
+  document.getElementById('f_pref').value=pref;
+}
+function openDriverPref(form){
+  pendingSubmitForm=form;
+  document.getElementById('prefOverlay').classList.add('show');
+}
+function closeDriverPref(){
+  pendingSubmitForm=null;
+  document.getElementById('prefOverlay').classList.remove('show');
+  var btn=document.getElementById('goBtn');
+  btn.disabled=false;
+  document.getElementById('spin').style.display='none';
+  document.getElementById('btnTxt').style.opacity='1';
+}
+function confirmDriverPref(){
+  document.getElementById('f_pref').value=selectedDriverPref;
+  document.getElementById('prefOverlay').classList.remove('show');
+  var btn=document.getElementById('goBtn');
+  btn.disabled=true;
+  document.getElementById('spin').style.display='block';
+  document.getElementById('btnTxt').style.opacity='0';
+  if(pendingSubmitForm) pendingSubmitForm.submit();
+}
+
 /* ─── Submit ─── */
 function handleSubmit(e){
   var p=document.getElementById('pickup').value.trim();
@@ -617,10 +719,12 @@ function handleSubmit(e){
   document.getElementById('f_dest').value=d;
   document.getElementById('f_voucher').value=voucherApplied;
   document.getElementById('f_quote').value=(priceState&&priceState.current)?priceState.current.fare:'';
-  var btn=document.getElementById('goBtn');btn.disabled=true;
-  document.getElementById('spin').style.display='block';
-  document.getElementById('btnTxt').style.opacity='0';
-  return true;
+
+  // Không gửi form ngay. Sau khi người dùng bấm đặt xe/thanh toán,
+  // GoRide hỏi gu tài xế để cá nhân hóa chuyến đi.
+  e.preventDefault();
+  openDriverPref(e.target);
+  return false;
 }
 </script>
 </body></html>

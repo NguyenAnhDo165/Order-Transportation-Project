@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>GoRide — Dashboard</title>
-  <link rel="icon" type="image/png" href="/static/goride.png?v=20260503"/>
+  <link rel="icon" type="image/png" href="/static/goride.png"/>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&family=Roboto+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -134,7 +134,7 @@
 
 <div class="topbar">
   <div class="tb-l">
-    <div class="tb-logo"><img src="/static/goride.png?v=20260503" alt="GoRide logo"/></div>
+    <div class="tb-logo"><img src="/static/goride.png" alt="GoRide logo"></div>
     <span class="tb-title">GoRide</span>
     <span class="tb-tag">Dev Dashboard</span>
   </div>
@@ -164,10 +164,10 @@
     </div>
     <div class="tw"><table>
       <thead><tr>
-        <th>ID</th><th>Giờ</th><th>Tài xế</th><th>Biển số</th><th>Loại xe</th>
+        <th>ID</th><th>Giờ</th><th>Tài xế</th><th>Biển số</th><th>Loại xe</th><th>Gu KH</th>
         <th>Km</th><th>Giá KH</th><th>Driver nhận</th><th>ETA</th><th>Trạng thái</th><th>Hành động</th>
       </tr></thead>
-      <tbody id="ridesBody"><tr><td colspan="11" class="empty-td">Đang tải...</td></tr></tbody>
+      <tbody id="ridesBody"><tr><td colspan="12" class="empty-td">Đang tải...</td></tr></tbody>
     </table></div>
   </div>
 </div>
@@ -367,22 +367,30 @@ function loadStats(){
   }).catch(function(){});
 }
 
+
+function prefLabel(p){
+  p=(p||'any').toLowerCase();
+  if(p==='quiet') return '<span class="pill completed">🔇 Im lặng</span>';
+  if(p==='chat') return '<span class="pill waiting">💬 Trò chuyện</span>';
+  return '<span class="pill" style="background:var(--accent-light);color:var(--accent);border:1px solid var(--accent-mid)">✨ Tối ưu</span>';
+}
+
 /* ── Rides ── */
 function loadRides(){
   fetch('/api/rides').then(function(r){return r.json()}).then(function(d){
     var rides=(d.rides||[]).slice().reverse();
     var waiting=rides.filter(function(r){return r.status==='waiting'}).length;
     document.getElementById('ridesSubtitle').textContent=rides.length>0?rides.length+' cuốc · '+waiting+' đang chạy':'Không có cuốc nào';
-    if(!rides.length){document.getElementById('ridesBody').innerHTML='<tr><td colspan="11" class="empty-td">⏳ Chưa có cuốc xe nào</td></tr>';return}
+    if(!rides.length){document.getElementById('ridesBody').innerHTML='<tr><td colspan="12" class="empty-td">⏳ Chưa có cuốc xe nào</td></tr>';return}
     var html='';
     rides.forEach(function(r){
       var earn=r.driver_earn_raw?fmt(r.driver_earn_raw):'—';
       var act=r.status==='waiting'?'<button class="btn green" onclick="completeRide(\''+r.id+'\')">✅ Hoàn thành</button>':'<span style="color:var(--green);font-size:12px;font-weight:700">✓ Xong</span>';
       var vtypeLabel=r.vtype==='bike'?'🛵 Xe máy':r.vtype==='car4'?'🚗 4 chỗ':'🚐 7 chỗ';
-      html+='<tr><td class="td-mono td-muted">'+r.id+'</td><td class="td-muted">'+r.created+'</td><td class="td-bold">'+(r.driver_name||'—')+'</td><td class="td-mono">'+(r.plate||'—')+'</td><td class="td-muted">'+vtypeLabel+'</td><td class="td-mono">'+(r.road_km||'—')+'km</td><td class="td-mono td-amber">'+fmt(r.fare)+'</td><td class="td-mono td-green">'+earn+'</td><td class="td-muted">'+(r.eta||'—')+' phút</td><td><span class="pill '+r.status+'">'+(r.status==='waiting'?'🟡 Đang chạy':'✅ Hoàn thành')+'</span></td><td>'+act+'</td></tr>';
+      html+='<tr><td class="td-mono td-muted">'+r.id+'</td><td class="td-muted">'+r.created+'</td><td class="td-bold">'+(r.driver_name||'—')+'</td><td class="td-mono">'+(r.plate||'—')+'</td><td class="td-muted">'+vtypeLabel+'</td><td>'+prefLabel(r.driver_preference)+'</td><td class="td-mono">'+(r.road_km||'—')+'km</td><td class="td-mono td-amber">'+fmt(r.fare)+'</td><td class="td-mono td-green">'+earn+'</td><td class="td-muted">'+(r.eta||'—')+' phút</td><td><span class="pill '+r.status+'">'+(r.status==='waiting'?'🟡 Đang chạy':'✅ Hoàn thành')+'</span></td><td>'+act+'</td></tr>';
     });
     document.getElementById('ridesBody').innerHTML=html;
-  }).catch(function(){document.getElementById('ridesBody').innerHTML='<tr><td colspan="11" class="empty-td">❌ Lỗi kết nối</td></tr>'});
+  }).catch(function(){document.getElementById('ridesBody').innerHTML='<tr><td colspan="12" class="empty-td">❌ Lỗi kết nối</td></tr>'});
 }
 function completeRide(rid){
   if(!confirm('Xác nhận hoàn thành chuyến '+rid+'?'))return;

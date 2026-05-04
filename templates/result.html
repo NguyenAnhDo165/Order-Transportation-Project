@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>GoRide – Đang đến</title>
-  <link rel="icon" type="image/png" href="/static/goride.png?v=20260503"/>
+  <link rel="icon" type="image/png" href="/static/goride.png"/>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=Roboto+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -73,6 +73,7 @@
     .badge{padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600}
     .badge-quiet{background:var(--green-bg);color:var(--green);border:1px solid #a7f3d0}
     .badge-chat{background:var(--amber-bg);color:var(--amber);border:1px solid #fde68a}
+    .badge-auto{background:var(--accent-light);color:var(--accent);border:1px solid var(--accent-mid)}
     .trips{font-family:'Roboto Mono',monospace;font-size:11px;color:var(--muted);font-weight:500}
     .eta-box{display:flex;flex-direction:column;align-items:center;gap:0;padding:7px 11px;background:var(--accent-light);border:1.5px solid var(--accent-mid);border-radius:11px;min-width:58px;flex-shrink:0}
     .eta-num{font-family:'Roboto Mono',monospace;font-size:20px;font-weight:700;color:var(--accent);line-height:1;letter-spacing:-1px}
@@ -240,6 +241,10 @@
     <div class="vehicle-row">
       <span>{{ driver.vehicle_icon }} {{ driver.vehicle }}</span>
       <span class="plate">{{ driver.plate }}</span>
+    </div>
+    <div class="vehicle-row" style="background:#eff6ff;border:1px solid #bfdbfe;color:#475569">
+      <span>Gu tài xế bạn chọn</span>
+      <span class="badge {{ 'badge-auto' if driver.requested_pref_raw == 'any' else driver.prefClass }}">{{ driver.requested_pref }}</span>
     </div>
 
     <div class="eta-bar-wrap"><div class="eta-bar-fill" id="etaBar"></div></div>
@@ -419,7 +424,7 @@ var driverHTML =
          'display:flex;align-items:center;gap:5px;' +
          'border:2px solid #059669;' +
          'font-family:Inter,sans-serif;font-size:11px;font-weight:700;color:#059669">' +
-      '<img id="driverLogo" src="/static/goride.png?v=20260503" alt="GoRide" style="width:18px;height:18px;object-fit:contain;display:block"/>' +
+      '<span id="driverEmoji" style="font-size:18px;line-height:1;display:block">🛵</span>' +
       '<span id="driverLabel">Đang đến</span>' +
     '</div>' +
     /* tail arrow pointing down */
@@ -693,7 +698,7 @@ function submitReview(){
   btn.disabled=true; btn.textContent='Đang gửi...';
   fetch('/submit_review',{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({ride_id:RIDE_ID,driver_name:DRIVER_NAME,plate:DRIVER_PLATE,stars:selStars,tags:selTags.join(', '),comment:comment,fare:{{ driver.fare | replace(',', '') | tojson }},driver_earn:{{ driver.driver_earn | replace(',', '') | tojson }}})
+    body:JSON.stringify({ride_id:RIDE_ID,driver_name:DRIVER_NAME,plate:DRIVER_PLATE,stars:selStars,tags:selTags.join(', '),comment:comment,fare:{{ driver.fare | replace(',', '') | tojson }},driver_earn:{{ driver.driver_earn | replace(',', '') | tojson }},driver_preference:{{ driver.requested_pref_raw | tojson }}})
   }).then(function(r){return r.json()}).then(function(){
     document.getElementById('reviewOverlay').classList.remove('active');
     document.getElementById('thankyouScreen').classList.add('active');

@@ -1,12 +1,13 @@
-timestamp,ride_id,status,driver_name,plate,vehicle_type,pickup,destination,road_km,fare,fare_raw,driver_earn,payment_method,voucher_code
-2026-04-30 13:03:43,c7abbb64,completed,Dương Thị Tùng,59T6 - 5830,bike,"Bến Thành, Quận 1, TP.HCM","Landmark 81, Bình Thạnh",8.39,36000,36000,29000,,
-2026-04-30 07:52:59,22e61b1f,completed,Ngô Minh Hiếu,72C3 - 9767,bike,Công viên Lê Văn Tám,Hùng Vương Plaza,6.05,51000,51000,41000,,
-2026-04-30 07:54:31,b4e1ea2d,completed,Bùi Anh Đạt,61C3 - 4436,car4,Vạn Hạnh Mall,Bùi Viện,3.35,53000,53000,42000,,
-2026-04-30 07:56:18,c193b9f5,completed,Võ Văn Bảo,51T4 - 8850,car4,Khu đô thị Vạn Phúc City,Công viên Tao Đàn,10.0,99000,99000,79000,,NEWUSER
-2026-05-01 07:58:00,5fb49772,completed,Ngô Văn Tùng,61C6 - 9097,car4,AEON Mall Bình Tân,Thảo Cầm Viên Sài Gòn,12.59,140000,140000,112000,,TETHOLIDAY
-2026-05-01 07:58:44,9e7f6b39,completed,Hồ Quang Nam,51F3 - 2833,bike,Công viên Hoàng Văn Thụ,Bảo tàng Mỹ thuật TP.HCM,5.99,50000,50000,40000,,
-2026-05-01 08:00:00,c6742634,completed,Lê Văn Phúc,61M3 - 6224,car7,Bảo tàng Chứng tích Chiến tranh,Bưu điện Trung tâm Sài Gòn,1.11,47000,47000,38000,,
-2026-05-01 08:00:39,5c54c8cf,completed,Võ Ngọc Việt,59H9 - 4886,bike,Phố đi bộ Nguyễn Huệ,Công viên Hoàng Văn Thụ,5.17,51000,51000,41000,,
-2026-05-01 08:33:36,6ce0732c,completed,Phạm Anh Hiếu,41B7 - 1829,bike,Đại học Khoa học Tự nhiên TP.HCM,Công viên Lê Văn Tám,17.93,95000,95000,76000,,TETHOLIDAY
-2026-05-01 08:59:32,adc99c72,completed,Võ Quang Khánh,51F2 - 6433,car4,Công viên Hoàng Văn Thụ,Đại học Tôn Đức Thắng,6.44,64000,64000,51000,,TETHOLIDAY
-2026-05-03 09:54:37,9e6d85a1,completed,Dương Thị Tùng,72B5 - 1482,bike,UEH,"Landmark 81, Bình Thạnh",8.45,38000,38000,30000,,
+timestamp,ride_id,status,driver_name,plate,vehicle_type,driver_preference,pickup,destination,road_km,fare,fare_raw,driver_earn,payment_method,voucher_code
+2026-04-30 13:03:43,c7abbb64,completed,Dương Thị Tùng,59T6 - 5830,bike,,"Bến Thành, Quận 1, TP.HCM","Landmark 81, Bình Thạnh",8.39,36000,36000,29000,,
+2026-04-30 07:52:59,22e61b1f,completed,Ngô Minh Hiếu,72C3 - 9767,bike,,Công viên Lê Văn Tám,Hùng Vương Plaza,6.05,51000,51000,41000,,
+2026-04-30 07:54:31,b4e1ea2d,completed,Bùi Anh Đạt,61C3 - 4436,car4,,Vạn Hạnh Mall,Bùi Viện,3.35,53000,53000,42000,,
+2026-04-30 07:56:18,c193b9f5,completed,Võ Văn Bảo,51T4 - 8850,car4,,Khu đô thị Vạn Phúc City,Công viên Tao Đàn,10.0,99000,99000,79000,,NEWUSER
+2026-05-01 07:58:00,5fb49772,completed,Ngô Văn Tùng,61C6 - 9097,car4,,AEON Mall Bình Tân,Thảo Cầm Viên Sài Gòn,12.59,140000,140000,112000,,TETHOLIDAY
+2026-05-01 07:58:44,9e7f6b39,completed,Hồ Quang Nam,51F3 - 2833,bike,,Công viên Hoàng Văn Thụ,Bảo tàng Mỹ thuật TP.HCM,5.99,50000,50000,40000,,
+2026-05-01 08:00:00,c6742634,completed,Lê Văn Phúc,61M3 - 6224,car7,,Bảo tàng Chứng tích Chiến tranh,Bưu điện Trung tâm Sài Gòn,1.11,47000,47000,38000,,
+2026-05-01 08:00:39,5c54c8cf,completed,Võ Ngọc Việt,59H9 - 4886,bike,,Phố đi bộ Nguyễn Huệ,Công viên Hoàng Văn Thụ,5.17,51000,51000,41000,,
+2026-05-01 08:33:36,6ce0732c,completed,Phạm Anh Hiếu,41B7 - 1829,bike,,Đại học Khoa học Tự nhiên TP.HCM,Công viên Lê Văn Tám,17.93,95000,95000,76000,,TETHOLIDAY
+2026-05-01 08:59:32,adc99c72,completed,Võ Quang Khánh,51F2 - 6433,car4,,Công viên Hoàng Văn Thụ,Đại học Tôn Đức Thắng,6.44,64000,64000,51000,,TETHOLIDAY
+2026-05-03 09:54:37,9e6d85a1,completed,Dương Thị Tùng,72B5 - 1482,bike,,UEH,"Landmark 81, Bình Thạnh",8.45,38000,38000,30000,,
+2026-05-04 17:17:19,4c2eb787,completed,Ngô Ngọc Long,61C4 - 8338,bike,quiet,"Bến Thành, Quận 1, TP.HCM","Landmark 81, Bình Thạnh",8.39,38000,38000,30000,,TETHOLIDAY
